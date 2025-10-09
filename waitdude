@@ -1,0 +1,61 @@
+-- Prevent redefinition
+if getgenv().wanderkiddfakepos_loaded then return end
+getgenv().wanderkiddfakepos_loaded = true
+
+-- Use getgenv to persist data across script re-runs
+local api = getfenv().api or {}
+
+local tabs = getgenv().wanderkidd_tabs or {
+    lua = api:AddTab("extra")
+}
+getgenv().wanderkidd_tabs = tabs
+
+local networkSection = tabs.lua:AddLeftGroupbox("WanderkiddFakePos")
+
+-- Persistent state storage
+getgenv().wanderkiddfakepos = getgenv().wanderkiddfakepos or {}
+local wanderkiddfakepos = getgenv().wanderkiddfakepos
+
+wanderkiddfakepos.Network = wanderkiddfakepos.Network or {
+    FakePos = false
+}
+
+-- Toggle heartbeat only once
+if not wanderkiddfakepos._connection then
+    wanderkiddfakepos._toggleState = false
+    wanderkiddfakepos._connection = game:GetService("RunService").Heartbeat:Connect(function()
+        if wanderkiddfakepos.Network.FakePos then
+            wanderkiddfakepos._toggleState = not wanderkiddfakepos._toggleState
+            pcall(function()
+                sethiddenproperty(game.Players.LocalPlayer.Character.HumanoidRootPart, "NetworkIsSleeping", wanderkiddfakepos._toggleState)
+            end)
+        end
+    end)
+end
+
+-- Avoid adding duplicate toggles
+if not wanderkiddfakepos._toggleCreated then
+    networkSection:AddToggle("fakepos_enabled", {
+        Text = "Fake Pos",
+        Default = wanderkiddfakepos.Network.FakePos,
+        Callback = function(value)
+            wanderkiddfakepos.Network.FakePos = value
+            if value then
+                setfflag("S2PhysicsSenderRate", "1")
+                setfpscap(1)
+                task.wait(0.1)
+                setfflag("S2PhysicsSenderRate", "20000")
+                setfpscap(240)
+            else
+                -- Reset flags and fps cap when toggled off
+                setfflag("S2PhysicsSenderRate", "20000")
+                setfpscap(240)
+                -- Ensure NetworkIsSleeping is reset
+                pcall(function()
+                    sethiddenproperty(game.Players.LocalPlayer.Character.HumanoidRootPart, "NetworkIsSleeping", false)
+                end)
+            end
+        end
+    })
+    wanderkiddfakepos._toggleCreated = true
+end
