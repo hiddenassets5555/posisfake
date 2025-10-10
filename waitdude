@@ -2,17 +2,51 @@
 if getgenv().wanderkiddfakepos_loaded then return end
 getgenv().wanderkiddfakepos_loaded = true
 
--- Use getgenv to persist data across script re-runs
 local api = getfenv().api or {}
 
 local tabs = getgenv().wanderkidd_tabs or {
-    lua = api:AddTab("extra")
+    lua = api:AddTab("1")
 }
 getgenv().wanderkidd_tabs = tabs
 
-local networkSection = tabs.lua:AddLeftGroupbox("WanderkiddFakePos")
+local networkSection = tabs.lua:AddLeftGroupbox("SuperFeatures")
 
--- Persistent state storage
+
+local logsSection = tabs.lua:AddRightGroupbox("Info")
+logsSection:AddLabel("Note: Fake Pos will only work on the normal version of Unamed Enhancements and not the beta version.", true)
+
+
+local creditsSection = tabs.lua:AddRightGroupbox("Credits")
+creditsSection:AddLabel("credits to wanderkidd", true)
+creditsSection:AddLabel("credits to pxqz for cfg !!!", true) 
+
+creditsSection:AddButton("Secret Button", function()
+    local Sound = Instance.new("Sound")
+    Sound.SoundId = "http://www.roblox.com/asset/?id=7641312805"
+    Sound.Volume = 5
+    Sound.Parent = game.Workspace
+    Sound:Play()
+
+    local Image = Drawing.new("Image")
+    local Screen = workspace.CurrentCamera.ViewportSize
+
+    Image.Data = game:HttpGet("https://media.discordapp.net/attachments/1335719661781782681/1405645805590937680/image.gif?ex=68e9692b&is=68e817ab&hm=1aa44d62c6e2e688060ca0c929c1051691e91ae7c1940fac1a4f192a3363fb10&=&width=1080&height=720")
+    Image.Visible = true
+    Image.Transparency = 1
+    Image.Position = Vector2.new(0, 0)
+    Image.Size = Vector2.new(Screen.X, Screen.Y)
+
+    task.wait(1.2)
+
+    for i = 1, 100 do
+        Image.Transparency = 1 - (i / 110)
+        task.wait(0.01)
+    end
+
+    Image:Remove()
+end)
+
+
 getgenv().wanderkiddfakepos = getgenv().wanderkiddfakepos or {}
 local wanderkiddfakepos = getgenv().wanderkiddfakepos
 
@@ -20,7 +54,11 @@ wanderkiddfakepos.Network = wanderkiddfakepos.Network or {
     FakePos = false
 }
 
--- Toggle heartbeat only once
+
+local framework = {}
+framework.keybindPressed = false
+
+
 if not wanderkiddfakepos._connection then
     wanderkiddfakepos._toggleState = false
     wanderkiddfakepos._connection = game:GetService("RunService").Heartbeat:Connect(function()
@@ -33,9 +71,10 @@ if not wanderkiddfakepos._connection then
     end)
 end
 
--- Avoid adding duplicate toggles
+
 if not wanderkiddfakepos._toggleCreated then
-    networkSection:AddToggle("fakepos_enabled", {
+    -- Main Fake Pos toggle
+    local fakeposToggle = networkSection:AddToggle("fakepos_enabled", {
         Text = "Fake Pos",
         Default = wanderkiddfakepos.Network.FakePos,
         Callback = function(value)
@@ -47,15 +86,31 @@ if not wanderkiddfakepos._toggleCreated then
                 setfflag("S2PhysicsSenderRate", "20000")
                 setfpscap(240)
             else
-                -- Reset flags and fps cap when toggled off
                 setfflag("S2PhysicsSenderRate", "20000")
                 setfpscap(240)
-                -- Ensure NetworkIsSleeping is reset
                 pcall(function()
                     sethiddenproperty(game.Players.LocalPlayer.Character.HumanoidRootPart, "NetworkIsSleeping", false)
                 end)
             end
         end
     })
+
+    networkSection:AddLabel("Toggle Key"):AddKeyPicker("fakepos_keybind", {
+        Default = "F",
+        Mode = "Toggle",
+        Text = "Fake Position [SuperFeatures]",
+        NoUI = false,
+        Callback = function()
+            if framework.keybindPressed then return end
+            framework.keybindPressed = true
+
+            fakeposToggle:SetValue(not fakeposToggle.Value)
+
+            task.delay(0.2, function()
+                framework.keybindPressed = false
+            end)
+        end
+    })
+
     wanderkiddfakepos._toggleCreated = true
 end
