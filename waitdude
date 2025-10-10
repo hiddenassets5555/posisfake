@@ -1,4 +1,3 @@
--- Prevent redefinition
 if getgenv().wanderkiddfakepos_loaded then return end
 getgenv().wanderkiddfakepos_loaded = true
 
@@ -11,14 +10,12 @@ getgenv().wanderkidd_tabs = tabs
 
 local networkSection = tabs.lua:AddLeftGroupbox("SuperFeatures")
 
-
 local logsSection = tabs.lua:AddRightGroupbox("Info")
 logsSection:AddLabel("Note: Fake Pos will only work on the normal version of Unamed Enhancements and not the beta version.", true)
 
-
 local creditsSection = tabs.lua:AddRightGroupbox("Credits")
 creditsSection:AddLabel("credits to wanderkidd", true)
-creditsSection:AddLabel("credits to pxqz for cfg !!!", true) 
+creditsSection:AddLabel("credits to pxqz for cfg !!!", true)
 
 creditsSection:AddButton("Secret Button", function()
     local Sound = Instance.new("Sound")
@@ -26,26 +23,7 @@ creditsSection:AddButton("Secret Button", function()
     Sound.Volume = 5
     Sound.Parent = game.Workspace
     Sound:Play()
-
-    local Image = Drawing.new("Image")
-    local Screen = workspace.CurrentCamera.ViewportSize
-
-    Image.Data = game:HttpGet("https://media.discordapp.net/attachments/1335719661781782681/1405645805590937680/image.gif?ex=68e9692b&is=68e817ab&hm=1aa44d62c6e2e688060ca0c929c1051691e91ae7c1940fac1a4f192a3363fb10&=&width=1080&height=720")
-    Image.Visible = true
-    Image.Transparency = 1
-    Image.Position = Vector2.new(0, 0)
-    Image.Size = Vector2.new(Screen.X, Screen.Y)
-
-    task.wait(1.2)
-
-    for i = 1, 100 do
-        Image.Transparency = 1 - (i / 110)
-        task.wait(0.01)
-    end
-
-    Image:Remove()
 end)
-
 
 getgenv().wanderkiddfakepos = getgenv().wanderkiddfakepos or {}
 local wanderkiddfakepos = getgenv().wanderkiddfakepos
@@ -54,10 +32,8 @@ wanderkiddfakepos.Network = wanderkiddfakepos.Network or {
     FakePos = false
 }
 
-
 local framework = {}
 framework.keybindPressed = false
-
 
 if not wanderkiddfakepos._connection then
     wanderkiddfakepos._toggleState = false
@@ -71,9 +47,7 @@ if not wanderkiddfakepos._connection then
     end)
 end
 
-
 if not wanderkiddfakepos._toggleCreated then
-    -- Main Fake Pos toggle
     local fakeposToggle = networkSection:AddToggle("fakepos_enabled", {
         Text = "Fake Pos",
         Default = wanderkiddfakepos.Network.FakePos,
@@ -103,9 +77,7 @@ if not wanderkiddfakepos._toggleCreated then
         Callback = function()
             if framework.keybindPressed then return end
             framework.keybindPressed = true
-
             fakeposToggle:SetValue(not fakeposToggle.Value)
-
             task.delay(0.2, function()
                 framework.keybindPressed = false
             end)
@@ -114,3 +86,495 @@ if not wanderkiddfakepos._toggleCreated then
 
     wanderkiddfakepos._toggleCreated = true
 end
+
+local miscSection = tabs.lua:AddLeftGroupbox("Misc")
+
+getgenv().AntiRPGDesyncEnabled = false
+getgenv().AntiRPGDesyncLoop = nil
+
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = game.Players.LocalPlayer
+
+local function IsThreatNear()
+    local Ignored = Workspace:FindFirstChild("Ignored")
+    if not Ignored then return false end
+    local HRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not HRP then return false end
+    local RPG = Ignored:FindFirstChild("Model") and Ignored.Model:FindFirstChild("Launcher")
+    local Grenade = Ignored:FindFirstChild("Handle")
+    local grenadeNear = Grenade and (Grenade.Position - HRP.Position).Magnitude < 16
+    return RPG or grenadeNear
+end
+
+local function StartThreatDetection()
+    if getgenv().AntiRPGDesyncLoop then return end
+    getgenv().AntiRPGDesyncLoop = RunService.PostSimulation:Connect(function()
+        if not getgenv().AntiRPGDesyncEnabled then return end
+        local Character = LocalPlayer.Character
+        local HRP = Character and Character:FindFirstChild("HumanoidRootPart")
+        local Humanoid = Character and Character:FindFirstChild("Humanoid")
+        if not HRP or not Humanoid then return end
+        if IsThreatNear() then
+            local Offset = Vector3.new(math.random(-100, 100), math.random(50, 150), math.random(-100, 100))
+            Humanoid.CameraOffset = -Offset
+            local OldCFrame = HRP.CFrame
+            HRP.CFrame = CFrame.new(HRP.Position + Offset)
+            RunService.RenderStepped:Wait()
+            HRP.CFrame = OldCFrame
+        end
+    end)
+    LocalPlayer.CharacterAdded:Connect(function()
+        task.wait(1)
+        if getgenv().AntiRPGDesyncEnabled then
+            StartThreatDetection()
+        end
+    end)
+end
+
+local function StopThreatDetection()
+    if getgenv().AntiRPGDesyncLoop then
+        getgenv().AntiRPGDesyncLoop:Disconnect()
+        getgenv().AntiRPGDesyncLoop = nil
+    end
+end
+
+miscSection:AddToggle("CombinedThreatDetection", {
+    Text = "RPG + Grenade Detection",
+    Default = false,
+    Callback = function(state)
+        getgenv().AntiRPGDesyncEnabled = state
+        if state then
+            StartThreatDetection()
+        else
+            StopThreatDetection()
+        end
+    end
+})
+
+miscSection:AddToggle("AntiSitToggle", {
+    Text = "Anti Sit",
+    Default = false,
+    Callback = function(state)
+        getgenv().antiSitEnabled = state
+        for _, seat in ipairs(workspace:GetDescendants()) do
+            if seat:IsA("Seat") or seat:IsA("VehicleSeat") then
+                seat.CanTouch = not state
+            end
+        end
+        workspace.DescendantAdded:Connect(function(seat)
+            if getgenv().antiSitEnabled and (seat:IsA("Seat") or seat:IsA("VehicleSeat")) then
+                seat.CanTouch = false
+            end
+        end)
+    end
+})
+
+local CASH_AURA_ENABLED = false
+local COOLDOWN = 0.2
+local CASH_AURA_RANGE = 17
+
+local function GetCash()
+    local Found = {}
+    local Drop = workspace:FindFirstChild("Ignored") and workspace.Ignored:FindFirstChild("Drop")
+    if Drop then
+        for _, v in pairs(Drop:GetChildren()) do
+            if v.Name == "MoneyDrop" then
+                local Pos = v:GetAttribute("OriginalPos") or v.Position
+                if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and (Pos - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= CASH_AURA_RANGE then
+                    table.insert(Found, v)
+                end
+            end
+        end
+    end
+    return Found
+end
+
+local function CashAura()
+    while CASH_AURA_ENABLED do
+        local Cash = GetCash()
+        for _, v in pairs(Cash) do
+            local clickDetector = v:FindFirstChildOfClass("ClickDetector")
+            if clickDetector then
+                fireclickdetector(clickDetector)
+            end
+        end
+        task.wait(COOLDOWN)
+    end
+end
+
+miscSection:AddToggle("CashAuraToggle", {
+    Text = "Cash Aura",
+    Default = false,
+    Callback = function(Value)
+        CASH_AURA_ENABLED = Value
+        if CASH_AURA_ENABLED then
+            task.spawn(CashAura)
+        end
+    end
+})
+
+local FarmSection = tabs.lua:AddLeftGroupbox("Farm")
+
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local Backpack = LocalPlayer:WaitForChild("Backpack")
+
+local AutoStompPos = CFrame.new(-1123, 21.75, -217.5)
+local Event = ReplicatedStorage:WaitForChild("MainEvent")
+
+local farmEnabled = false
+local stompTask
+
+local function Teleport(pos)
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = pos
+    end
+end
+
+local function GetPlayerPositionForTeleport(character)
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then return nil end
+    local parts = {}
+    for _, part in ipairs(character:GetChildren()) do
+        if part:IsA("BasePart") then table.insert(parts, part.Position) end
+    end
+    if #parts == 0 then return root.CFrame + Vector3.new(0, 3, 0) end
+    local sum = Vector3.new(0, 0, 0)
+    for _, pos in ipairs(parts) do sum = sum + pos end
+    local avgPos = sum / #parts
+    return CFrame.new(avgPos + Vector3.new(0, 3, 0))
+end
+
+local function GetValidTargets()
+    local targets = {}
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+            local root = player.Character:FindFirstChild("HumanoidRootPart")
+            if humanoid and root and humanoid.Health <= 2 and humanoid.Health > 0 then
+                table.insert(targets, root)
+            end
+        end
+    end
+    return targets
+end
+
+local function StartStompFarm()
+    stompTask = task.spawn(function()
+        while farmEnabled do
+            local targets = GetValidTargets()
+            for _, targetRoot in pairs(targets) do
+                if not farmEnabled then break end
+                local teleportPos = GetPlayerPositionForTeleport(targetRoot.Parent)
+                if teleportPos then
+                    Teleport(teleportPos)
+                else
+                    Teleport(targetRoot.CFrame + Vector3.new(0, 3, 0))
+                end
+                task.wait(0.2)
+                Event:FireServer("Stomp")
+                task.wait(0.1)
+                Teleport(AutoStompPos)
+                task.wait(0.2)
+            end
+            task.wait(0.5)
+        end
+    end)
+end
+
+local function StopStompFarm()
+    farmEnabled = false
+    if stompTask then
+        task.cancel(stompTask)
+        stompTask = nil
+    end
+end
+
+local function OnCharacterAdded(char)
+    char:WaitForChild("HumanoidRootPart")
+    if farmEnabled then
+        Teleport(AutoStompPos)
+    end
+end
+
+LocalPlayer.CharacterAdded:Connect(OnCharacterAdded)
+
+FarmSection:AddToggle("AutoStompFarm", {
+    Text = "Auto Stomp Farm",
+    Default = false,
+    Callback = function(Value)
+        farmEnabled = Value
+        if farmEnabled then
+            if not (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")) then
+                LocalPlayer.CharacterAdded:Wait()
+            end
+            Teleport(AutoStompPos)
+            StartStompFarm()
+        else
+            StopStompFarm()
+        end
+    end,
+})
+
+do
+    local Players = game:GetService('Players')
+    local RunService = game:GetService('RunService')
+    local player = Players.LocalPlayer
+    local targetPos = Vector3.new(-279.602, 22.568, -1142.230)
+    local toolName = 'Combat'
+    local toggleEnabled = false
+    local heartbeatConn
+    local charAddedConn
+    local activateLoopRunning = false
+    local activateLoopCancel = false
+    local originalPos = nil
+    local targetPart = workspace.MAP.Map['Punching(BAGS)']:GetChildren()[3]['pretty ransom']
+
+    local function equipTool(character)
+        if not character then return nil end
+        local backpack = player:WaitForChild('Backpack')
+        local humanoid = character:FindFirstChildOfClass('Humanoid')
+        if not humanoid then return nil end
+        local tool = backpack:FindFirstChild(toolName) or character:FindFirstChild(toolName)
+        if tool then
+            if character:FindFirstChild(toolName) ~= tool then
+                humanoid:EquipTool(tool)
+                task.wait(0.1)
+            end
+            return tool
+        end
+        return nil
+    end
+
+    local function unequipTools(character)
+        if not character then return end
+        local humanoid = character:FindFirstChildOfClass('Humanoid')
+        if humanoid then humanoid:UnequipTools() end
+    end
+
+    local function teleportAndFacePart(character, part)
+        local hrp = character:FindFirstChild('HumanoidRootPart')
+        if hrp and part then
+            hrp.CFrame = CFrame.new(targetPos, part.Position)
+        end
+    end
+
+    local function activateToolLoop(tool)
+        activateLoopRunning = true
+        activateLoopCancel = false
+        local humanoid = player.Character and player.Character:FindFirstChildOfClass('Humanoid')
+        while toggleEnabled and tool and tool.Parent and not activateLoopCancel and humanoid do
+            if player.Character and player.Character:FindFirstChild(toolName) ~= tool then
+                humanoid:EquipTool(tool)
+                task.wait(0.1)
+            end
+            if tool.Activate then tool:Activate() end
+            task.wait(0.1)
+            humanoid:UnequipTools()
+            task.wait(0.1)
+            humanoid:EquipTool(tool)
+            task.wait(0.1)
+        end
+        activateLoopRunning = false
+    end
+
+    local function stopAll()
+        toggleEnabled = false
+        activateLoopCancel = true
+        if heartbeatConn then heartbeatConn:Disconnect() heartbeatConn = nil end
+        if charAddedConn then charAddedConn:Disconnect() charAddedConn = nil end
+        local character = player.Character
+        if character and character.Parent then
+            local hrp = character:FindFirstChild('HumanoidRootPart')
+            if hrp and originalPos then hrp.CFrame = originalPos end
+            unequipTools(character)
+        end
+        originalPos = nil
+    end
+
+    local function onToggleChanged(value)
+        if value == toggleEnabled then return end
+        toggleEnabled = value
+        if not toggleEnabled then stopAll() return end
+        local character = player.Character
+        if character and character.Parent then
+            local hrp = character:FindFirstChild('HumanoidRootPart')
+            if hrp then originalPos = hrp.CFrame end
+        end
+        activateLoopCancel = false
+        heartbeatConn = RunService.Heartbeat:Connect(function()
+            if not toggleEnabled then return end
+            local character = player.Character
+            if not character or not character.Parent then return end
+            teleportAndFacePart(character, targetPart)
+            local tool = equipTool(character)
+            local humanoid = character:FindFirstChildOfClass('Humanoid')
+            if humanoid and humanoid.Health < 2 then humanoid.Health = 0 end
+            if tool and not activateLoopRunning then
+                task.spawn(function() activateToolLoop(tool) end)
+            end
+        end)
+        charAddedConn = player.CharacterAdded:Connect(function(char)
+            if toggleEnabled then
+                task.wait(0.1)
+                teleportAndFacePart(char, targetPart)
+                equipTool(char)
+            end
+        end)
+    end
+
+    FarmSection:AddToggle('BoxingFarm', {
+        Text = 'Boxing Farm',
+        Default = false,
+        Callback = function(value)
+            onToggleChanged(value)
+        end,
+    })
+end
+
+FarmSection:AddToggle("lettuceToggle", {
+    Text = "Auto Eat Lettuce",
+    Default = false,
+    Tooltip = "auto buy and eat lettuce",
+})
+
+local function fireClickDetector(cd)
+    if cd and cd:IsA("ClickDetector") then fireclickdetector(cd) end
+end
+
+local function equipLettuce()
+    local tool = LocalPlayer.Backpack:FindFirstChild("[Lettuce]")
+    if tool then tool.Parent = LocalPlayer.Character end
+end
+
+local function activateLettuce()
+    local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("[Lettuce]")
+    if tool and tool:IsA("Tool") then tool:Activate() end
+end
+
+task.spawn(function()
+    while true do
+        if Toggles.lettuceToggle.Value then
+            LocalPlayer.Character:PivotTo(CFrame.new(-86.74, 23.32, -632.27))
+            task.wait(0.3)
+            local shop = Workspace:FindFirstChild("Ignored") and Workspace.Ignored:FindFirstChild("Shop")
+            if shop then
+                for _, obj in ipairs(shop:GetDescendants()) do
+                    if obj:IsA("ClickDetector") and obj.Parent and obj.Parent.Name == "[Lettuce] - $5" then
+                        fireClickDetector(obj)
+                        break
+                    end
+                end
+            end
+            task.wait(0.5)
+            equipLettuce()
+            task.wait(0.3)
+            activateLettuce()
+        end
+        task.wait(1)
+    end
+end)
+
+local toggleName = "HeavyWeightsAuto"
+
+FarmSection:AddToggle(toggleName, {
+    Text = "Auto Farm Weights",
+    Tooltip = "auto lifts weights",
+    Default = false,
+})
+
+local activationConnection
+local respawnConnection
+
+local function getCharacter()
+    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local hrp = char:WaitForChild("HumanoidRootPart")
+    return char, hrp
+end
+
+local function teleportTo(pos)
+    local _, hrp = getCharacter()
+    hrp.CFrame = CFrame.new(pos)
+    task.wait(0.5)
+end
+
+local function findShopItem()
+    local shopFolder = Workspace.Ignored.Shop
+    for _, item in ipairs(shopFolder:GetChildren()) do
+        if item.Name:lower():find("heavyweights") then
+            return item
+        end
+    end
+    return nil
+end
+
+local function fireClickDetector(shopItem)
+    if not shopItem then return end
+    local clickDetector = nil
+    if shopItem:IsA("ClickDetector") then
+        clickDetector = shopItem
+    else
+        clickDetector = shopItem:FindFirstChild("ClickDetector") or shopItem:FindFirstChildWhichIsA("ClickDetector", true)
+    end
+    if clickDetector and clickDetector:IsA("ClickDetector") then
+        pcall(function() fireclickdetector(clickDetector) end)
+    end
+end
+
+local function equipTool(toolName)
+    for i = 1, 100 do
+        local tool = Backpack:FindFirstChild(toolName) or (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild(toolName))
+        if tool and tool:IsA("Tool") then
+            tool.Parent = LocalPlayer.Character
+            return tool
+        end
+        task.wait(0.1)
+    end
+    return nil
+end
+
+local function autoActivateTool(tool)
+    if activationConnection then
+        activationConnection:Disconnect()
+        activationConnection = nil
+    end
+    activationConnection = RunService.Heartbeat:Connect(function()
+        if not Toggles[toggleName].Value then return end
+        if tool and tool.Parent == LocalPlayer.Character then
+            pcall(function() tool:Activate() end)
+        end
+    end)
+end
+
+local function mainProcess()
+    teleportTo(Vector3.new(-46.36, 23.57, -653.74))
+    local shopItem = findShopItem()
+    if not shopItem then return end
+    fireClickDetector(shopItem)
+    task.wait(1)
+    teleportTo(Vector3.new(768.47, 112.62, -787.92))
+    local tool = equipTool("[HeavyWeights]")
+    if tool then autoActivateTool(tool) end
+end
+
+local function onToggleChanged(value)
+    if not value then
+        if activationConnection then activationConnection:Disconnect() activationConnection = nil end
+        if respawnConnection then respawnConnection:Disconnect() respawnConnection = nil end
+        return
+    end
+    task.spawn(mainProcess)
+    if respawnConnection then respawnConnection:Disconnect() respawnConnection = nil end
+    respawnConnection = LocalPlayer.CharacterAdded:Connect(function()
+        task.wait(2)
+        if Toggles[toggleName].Value then task.spawn(mainProcess) end
+    end)
+end
+
+Toggles[toggleName]:OnChanged(onToggleChanged)
