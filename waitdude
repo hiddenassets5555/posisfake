@@ -30,6 +30,7 @@ creditsSection:AddButton('Secret Button', function()
     Sound:Play()
 end)
 
+
 getgenv().wanderkiddfakepos = getgenv().wanderkiddfakepos or {}
 local wanderkiddfakepos = getgenv().wanderkiddfakepos
 
@@ -42,18 +43,23 @@ local framework = {}
 framework.keybindPressed = false
 
 if not wanderkiddfakepos._connection then
-    wanderkiddfakepos._toggleState = false
     wanderkiddfakepos._connection = game:GetService('RunService').Heartbeat
         :Connect(function()
             if wanderkiddfakepos.Network.FakePos then
-                wanderkiddfakepos._toggleState =
-                    not wanderkiddfakepos._toggleState
                 pcall(function()
-                    sethiddenproperty(
-                        game.Players.LocalPlayer.Character.HumanoidRootPart,
-                        'NetworkIsSleeping',
-                        wanderkiddfakepos._toggleState
-                    )
+                    local character = game.Players.LocalPlayer.Character
+                    if character and character:FindFirstChild('HumanoidRootPart') then
+                        -- NEW METHOD: Toggle NetworkIsSleeping to appear frozen, not laggy
+                        local hrp = character.HumanoidRootPart
+                        
+                        -- Toggle between true/false to create frozen effect instead of laggy
+                        if wanderkiddfakepos._toggleState then
+                            sethiddenproperty(hrp, 'NetworkIsSleeping', true)
+                        else
+                            sethiddenproperty(hrp, 'NetworkIsSleeping', false)
+                        end
+                        wanderkiddfakepos._toggleState = not wanderkiddfakepos._toggleState
+                    end
                 end)
             end
         end)
@@ -66,25 +72,30 @@ if not wanderkiddfakepos._toggleCreated then
         Callback = function(value)
             wanderkiddfakepos.Network.FakePos = value
             if value then
+                -- NEW METHOD: Initialize toggle state for frozen effect
+                wanderkiddfakepos._toggleState = true
                 setfflag('S2PhysicsSenderRate', '1')
                 setfpscap(1)
                 task.wait(0.1)
                 setfflag('S2PhysicsSenderRate', '20000')
                 setfpscap(240)
             else
+                -- Disable fake pos
                 setfflag('S2PhysicsSenderRate', '20000')
                 setfpscap(240)
+                wanderkiddfakepos._toggleState = nil
                 pcall(function()
-                    sethiddenproperty(
-                        game.Players.LocalPlayer.Character.HumanoidRootPart,
-                        'NetworkIsSleeping',
-                        false
-                    )
+                    local character = game.Players.LocalPlayer.Character
+                    if character and character:FindFirstChild('HumanoidRootPart') then
+                        sethiddenproperty(character.HumanoidRootPart, 'NetworkIsSleeping', false)
+                    end
                 end)
             end
         end,
     })
 
+    networkSection:AddDivider()
+    
     networkSection:AddLabel('Toggle Key'):AddKeyPicker('fakepos_keybind', {
         Default = 'F',
         Mode = 'Toggle',
@@ -318,6 +329,7 @@ miscSection:AddToggle('AntiSitToggle', {
 
 local FarmSection = tabs.lua:AddRightGroupbox(':p')
 
+
 -- Your existing services and variables
 local Players = game:GetService('Players')
 local RunService = game:GetService('RunService')
@@ -336,6 +348,8 @@ local healthConnection = nil
 local attackThread = nil
 local farmingThread = nil
 local noclipConnection = nil
+local antiAFKConnection = nil
+local antiSitConnection = nil
 
 LocalPlayer.CharacterAdded:Connect(function(char)
     currentCharacter = char
@@ -443,6 +457,68 @@ local function setNoClip(enabled)
     end
 end
 
+local function startAntiAFK()
+    if antiAFKConnection then
+        antiAFKConnection:Disconnect()
+        antiAFKConnection = nil
+    end
+    
+    antiAFKConnection = RunService.Heartbeat:Connect(function()
+        if not farming then
+            return
+        end
+        
+        local character = LocalPlayer.Character
+        if character and character:FindFirstChild('Humanoid') then
+            local humanoid = character.Humanoid
+            -- Move slightly to prevent AFK detection
+            humanoid:Move(Vector3.new(math.random(-1, 1), 0, math.random(-1, 1)))
+        end
+    end)
+end
+
+local function startAntiSit()
+    if antiSitConnection then
+        antiSitConnection:Disconnect()
+        antiSitConnection = nil
+    end
+    
+    -- Disable all existing seats
+    for _, seat in ipairs(workspace:GetDescendants()) do
+        if seat:IsA('Seat') or seat:IsA('VehicleSeat') then
+            seat.CanTouch = false
+        end
+    end
+    
+    -- Connect to new seats
+    antiSitConnection = workspace.DescendantAdded:Connect(function(seat)
+        if farming and (seat:IsA('Seat') or seat:IsA('VehicleSeat')) then
+            seat.CanTouch = false
+        end
+    end)
+end
+
+local function stopAntiAFK()
+    if antiAFKConnection then
+        antiAFKConnection:Disconnect()
+        antiAFKConnection = nil
+    end
+end
+
+local function stopAntiSit()
+    if antiSitConnection then
+        antiSitConnection:Disconnect()
+        antiSitConnection = nil
+    end
+    
+    -- Re-enable all seats
+    for _, seat in ipairs(workspace:GetDescendants()) do
+        if seat:IsA('Seat') or seat:IsA('VehicleSeat') then
+            seat.CanTouch = true
+        end
+    end
+end
+
 local function tweenToPosition(position, duration)
     if
         currentCharacter
@@ -478,17 +554,18 @@ local function collectDrops()
     then
         return
     end
+    
+    local hrp = currentCharacter.HumanoidRootPart
+    local hrpPos = hrp.Position
+    
     for _, drop in ipairs(dropFolder:GetChildren()) do
         if drop:IsA('BasePart') then
-            local dist = (
-                drop.Position - currentCharacter.HumanoidRootPart.Position
-            ).Magnitude
+            local dist = (drop.Position - hrpPos).Magnitude
             if dist <= attackRadius then
-                local clickDetector =
-                    drop:FindFirstChildWhichIsA('ClickDetector', true)
+                local clickDetector = drop:FindFirstChildWhichIsA('ClickDetector', true)
                 if clickDetector then
                     fireclickdetector(clickDetector)
-                    task.wait(1)
+                    task.wait(0.5) -- Slower pickup wait
                 end
             end
         end
@@ -499,6 +576,11 @@ function startFarming()
     if farmingThread then
         return
     end
+    
+    -- Start anti-AFK and anti-sit
+    startAntiAFK()
+    startAntiSit()
+    
     farmingThread = task.spawn(function()
         setNoClip(true)
         while farming do
@@ -528,40 +610,75 @@ function startFarming()
                         equipCombat()
                         tpInsideModelTween(cashier)
                         autoAttack()
-
+                        
+                        -- Punch counting for ATM switching
+                        local punchCount = 0
+                        local maxPunches = 10 -- Switch if ATM doesn't open after 10 hits
+                        local originalHealth = humanoid.Health
+                        local atmDefeated = false
+                        
                         while farming and humanoid.Health > 0 do
                             collectDrops()
                             tpInsideModelTween(cashier)
+                            
+                            -- Check if health hasn't decreased (ATM not opening)
+                            if humanoid.Health >= originalHealth then
+                                punchCount = punchCount + 1
+                                if punchCount > maxPunches then
+                                    -- ATM not opening after 10+ hits, switch immediately
+                                    break
+                                end
+                            else
+                                -- Health decreased, ATM is being damaged
+                                punchCount = 0
+                                originalHealth = humanoid.Health
+                            end
                         end
-
-                        local dropsRemain = true
-                        while farming and dropsRemain do
-                            dropsRemain = false
-                            if
-                                dropFolder
-                                and currentCharacter
-                                and currentCharacter:FindFirstChild(
-                                    'HumanoidRootPart'
-                                )
-                            then
-                                for _, drop in ipairs(dropFolder:GetChildren()) do
-                                    if drop:IsA('BasePart') then
-                                        local dist = (
-                                            drop.Position
-                                            - currentCharacter.HumanoidRootPart.Position
-                                        ).Magnitude
-                                        if dist <= attackRadius then
-                                            dropsRemain = true
-                                            break
+                        
+                        -- Check if ATM was defeated (health reached 0)
+                        if humanoid.Health <= 0 then
+                            atmDefeated = true
+                        end
+                        
+                        -- Always wait for cash collection after ATM interaction
+                        if atmDefeated then
+                            local dropsRemain = true
+                            local collectionAttempts = 0
+                            local maxCollectionAttempts = 50 -- Prevent infinite loop
+                            
+                            while farming and dropsRemain and collectionAttempts < maxCollectionAttempts do
+                                dropsRemain = false
+                                collectionAttempts = collectionAttempts + 1
+                                
+                                if
+                                    dropFolder
+                                    and currentCharacter
+                                    and currentCharacter:FindFirstChild(
+                                        'HumanoidRootPart'
+                                    )
+                                then
+                                    local hrp = currentCharacter.HumanoidRootPart
+                                    local hrpPos = hrp.Position
+                                    
+                                    for _, drop in ipairs(dropFolder:GetChildren()) do
+                                        if drop:IsA('BasePart') then
+                                            local dist = (drop.Position - hrpPos).Magnitude
+                                            if dist <= attackRadius then
+                                                dropsRemain = true
+                                                break
+                                            end
                                         end
                                     end
                                 end
-                            end
-                            if dropsRemain then
-                                collectDrops()
-                                tpInsideModelTween(cashier)
+                                
+                                if dropsRemain then
+                                    collectDrops()
+                                    tpInsideModelTween(cashier)
+                                    task.wait(0.3) -- Slower drop collection cycle
+                                end
                             end
                         end
+
                         task.wait(1)
                     end
                 end
@@ -579,7 +696,12 @@ function stopFarming()
     farmingThread = nil
     attackThread = nil
     setNoClip(false)
+    
+    -- Stop anti-AFK and anti-sit
+    stopAntiAFK()
+    stopAntiSit()
 end
+
 
 -- UI Toggles
 -- Add ATM Farm toggle on top
@@ -614,6 +736,7 @@ local Event = ReplicatedStorage:WaitForChild('MainEvent')
 
 local farmEnabled = false
 local stompTask
+local originalStompPosition = nil
 
 local function Teleport(pos)
     local char = LocalPlayer.Character
@@ -695,6 +818,12 @@ local function StopStompFarm()
         task.cancel(stompTask)
         stompTask = nil
     end
+    
+    -- Teleport back to original position when disabled
+    if originalStompPosition then
+        Teleport(originalStompPosition)
+        originalStompPosition = nil
+    end
 end
 
 local function OnCharacterAdded(char)
@@ -712,6 +841,11 @@ FarmSection:AddToggle('AutoStompFarm', {
     Callback = function(Value)
         farmEnabled = Value
         if farmEnabled then
+            -- Save original position when enabling
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('HumanoidRootPart') then
+                originalStompPosition = LocalPlayer.Character.HumanoidRootPart.CFrame
+            end
+            
             if
                 not (
                     LocalPlayer.Character
@@ -719,6 +853,10 @@ FarmSection:AddToggle('AutoStompFarm', {
                 )
             then
                 LocalPlayer.CharacterAdded:Wait()
+                -- Save position after character loads
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('HumanoidRootPart') then
+                    originalStompPosition = LocalPlayer.Character.HumanoidRootPart.CFrame
+                end
             end
             Teleport(AutoStompPos)
             StartStompFarm()
@@ -757,7 +895,7 @@ do
         if tool then
             if character:FindFirstChild(toolName) ~= tool then
                 humanoid:EquipTool(tool)
-                task.wait(0.1)
+                task.wait(0.01) -- Super fast equip wait
             end
             return tool
         end
@@ -777,7 +915,9 @@ do
     local function teleportAndFacePart(character, part)
         local hrp = character:FindFirstChild('HumanoidRootPart')
         if hrp and part then
-            hrp.CFrame = CFrame.new(targetPos, part.Position)
+            -- Teleport on top of the punching bag standing up straight
+            local bagPosition = part.Position
+            hrp.CFrame = CFrame.new(bagPosition + Vector3.new(0, 2, 0), bagPosition + Vector3.new(0, 0, 1))
         end
     end
 
@@ -798,16 +938,16 @@ do
                 and player.Character:FindFirstChild(toolName) ~= tool
             then
                 humanoid:EquipTool(tool)
-                task.wait(0.1)
+                task.wait(0.01) -- Super fast equip wait
             end
             if tool.Activate then
                 tool:Activate()
             end
-            task.wait(0.1)
+            task.wait(0.01) -- Super fast activation wait
             humanoid:UnequipTools()
-            task.wait(0.1)
+            task.wait(0.01) -- Super fast unequip wait
             humanoid:EquipTool(tool)
-            task.wait(0.1)
+            task.wait(0.01) -- Super fast re-equip wait
         end
         activateLoopRunning = false
     end
@@ -873,7 +1013,7 @@ do
         end)
         charAddedConn = player.CharacterAdded:Connect(function(char)
             if toggleEnabled then
-                task.wait(0.1)
+                task.wait(0.01) -- Super fast respawn wait
                 teleportAndFacePart(char, targetPart)
                 equipTool(char)
             end
@@ -889,10 +1029,29 @@ do
     })
 end
 
+-- Lettuce position memory
+local originalLettucePosition = nil
+
 FarmSection:AddToggle('lettuceToggle', {
     Text = 'Auto Lettuce',
     Default = false,
     Tooltip = 'auto buy and eat lettuce',
+    Callback = function(value)
+        if value then
+            -- Save original position when enabling
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('HumanoidRootPart') then
+                originalLettucePosition = LocalPlayer.Character.HumanoidRootPart.CFrame
+            end
+        else
+            -- Teleport back to original position when disabled
+            if originalLettucePosition then
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('HumanoidRootPart') then
+                    LocalPlayer.Character.HumanoidRootPart.CFrame = originalLettucePosition
+                end
+                originalLettucePosition = nil
+            end
+        end
+    end,
 })
 
 local function fireClickDetector(cd)
@@ -905,7 +1064,9 @@ local function equipLettuce()
     local tool = LocalPlayer.Backpack:FindFirstChild('[Lettuce]')
     if tool then
         tool.Parent = LocalPlayer.Character
+        return tool
     end
+    return nil
 end
 
 local function activateLettuce()
@@ -913,34 +1074,54 @@ local function activateLettuce()
         and LocalPlayer.Character:FindFirstChild('[Lettuce]')
     if tool and tool:IsA('Tool') then
         tool:Activate()
+        return true
     end
+    return false
+end
+
+local function buyLettuce()
+    LocalPlayer.Character:PivotTo(CFrame.new(-86.74, 23.32, -632.27))
+    task.wait(0.05) -- Super fast teleport wait
+    local shop = Workspace:FindFirstChild('Ignored')
+        and Workspace.Ignored:FindFirstChild('Shop')
+    if shop then
+        for _, obj in ipairs(shop:GetDescendants()) do
+            if
+                obj:IsA('ClickDetector')
+                and obj.Parent
+                and obj.Parent.Name == '[Lettuce] - $5'
+            then
+                fireClickDetector(obj)
+                break
+            end
+        end
+    end
+    task.wait(0.1) -- Super fast buy wait
 end
 
 task.spawn(function()
     while true do
         if Toggles.lettuceToggle.Value then
-            LocalPlayer.Character:PivotTo(CFrame.new(-86.74, 23.32, -632.27))
-            task.wait(0.3)
-            local shop = Workspace:FindFirstChild('Ignored')
-                and Workspace.Ignored:FindFirstChild('Shop')
-            if shop then
-                for _, obj in ipairs(shop:GetDescendants()) do
-                    if
-                        obj:IsA('ClickDetector')
-                        and obj.Parent
-                        and obj.Parent.Name == '[Lettuce] - $5'
-                    then
-                        fireClickDetector(obj)
-                        break
-                    end
-                end
+            -- Check if lettuce is equipped
+            local hasLettuce = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('[Lettuce]')
+            
+            if not hasLettuce then
+                -- No lettuce equipped, buy new one
+                buyLettuce()
+                equipLettuce()
             end
-            task.wait(0.5)
-            equipLettuce()
-            task.wait(0.3)
-            activateLettuce()
+            
+            -- Try to activate lettuce
+            local activated = activateLettuce()
+            
+            -- If activation failed (lettuce was eaten), buy new one
+            if not activated then
+                task.wait(0.05)
+                buyLettuce()
+                equipLettuce()
+            end
         end
-        task.wait(1)
+        task.wait(0.05) -- Super fast cycle time
     end
 end)
 
@@ -954,6 +1135,8 @@ FarmSection:AddToggle(toggleName, {
 
 local activationConnection
 local respawnConnection
+local toolMonitorConnection
+local originalWeightPosition = nil
 
 local function getCharacter()
     local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
@@ -996,17 +1179,27 @@ local function fireClickDetector(shopItem)
 end
 
 local function equipTool(toolName)
-    for i = 1, 100 do
-        local tool = Backpack:FindFirstChild(toolName)
-            or (
-                LocalPlayer.Character
-                and LocalPlayer.Character:FindFirstChild(toolName)
-            )
-        if tool and tool:IsA('Tool') then
-            tool.Parent = LocalPlayer.Character
-            return tool
+    -- First check if already equipped
+    local character = LocalPlayer.Character
+    if character then
+        local equippedTool = character:FindFirstChild(toolName)
+        if equippedTool and equippedTool:IsA('Tool') then
+            return equippedTool
         end
-        task.wait(0.1)
+    end
+    
+    -- Try to find and equip from backpack
+    for i = 1, 50 do -- Reduced iterations for faster response
+        local tool = Backpack:FindFirstChild(toolName)
+        if tool and tool:IsA('Tool') then
+            local humanoid = character and character:FindFirstChild('Humanoid')
+            if humanoid then
+                humanoid:EquipTool(tool)
+                task.wait(0.1) -- Short wait to ensure tool is equipped
+                return tool
+            end
+        end
+        task.wait(0.05) -- Reduced wait time for faster checking
     end
     return nil
 end
@@ -1020,7 +1213,32 @@ local function autoActivateTool(tool)
         if not Toggles[toggleName].Value then
             return
         end
-        if tool and tool.Parent == LocalPlayer.Character then
+        
+        local character = LocalPlayer.Character
+        if not character then
+            return
+        end
+        
+        local humanoid = character:FindFirstChild('Humanoid')
+        if not humanoid then
+            return
+        end
+        
+        -- Check if tool is equipped, if not, auto-equip it
+        local equippedTool = character:FindFirstChild('[HeavyWeights]')
+        if not equippedTool then
+            -- Try to find tool in backpack and equip it
+            local backpackTool = Backpack:FindFirstChild('[HeavyWeights]')
+            if backpackTool then
+                humanoid:EquipTool(backpackTool)
+                tool = backpackTool
+            end
+        else
+            tool = equippedTool
+        end
+        
+        -- Activate tool if equipped
+        if tool and tool.Parent == character then
             pcall(function()
                 tool:Activate()
             end)
@@ -1035,11 +1253,20 @@ local function mainProcess()
         return
     end
     fireClickDetector(shopItem)
-    task.wait(1)
+    task.wait(0.5) -- Reduced wait time for faster operation
     teleportTo(Vector3.new(768.47, 112.62, -787.92))
+    
+    -- Ensure tool is equipped and start auto-activation
     local tool = equipTool('[HeavyWeights]')
     if tool then
         autoActivateTool(tool)
+    else
+        -- If tool not found, try again after a short delay
+        task.wait(0.5)
+        tool = equipTool('[HeavyWeights]')
+        if tool then
+            autoActivateTool(tool)
+        end
     end
 end
 
@@ -1053,8 +1280,57 @@ local function onToggleChanged(value)
             respawnConnection:Disconnect()
             respawnConnection = nil
         end
+        if toolMonitorConnection then
+            toolMonitorConnection:Disconnect()
+            toolMonitorConnection = nil
+        end
+        
+        -- Teleport back to original position when disabled
+        if originalWeightPosition then
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('HumanoidRootPart') then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = originalWeightPosition
+            end
+            originalWeightPosition = nil
+        end
         return
     end
+    
+    -- Save original position when enabling
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('HumanoidRootPart') then
+        originalWeightPosition = LocalPlayer.Character.HumanoidRootPart.CFrame
+    end
+    
+    -- Start tool monitoring to auto-equip when unequipped
+    if toolMonitorConnection then
+        toolMonitorConnection:Disconnect()
+        toolMonitorConnection = nil
+    end
+    
+    toolMonitorConnection = RunService.Heartbeat:Connect(function()
+        if not Toggles[toggleName].Value then
+            return
+        end
+        
+        local character = LocalPlayer.Character
+        if not character then
+            return
+        end
+        
+        local humanoid = character:FindFirstChild('Humanoid')
+        if not humanoid then
+            return
+        end
+        
+        -- Check if HeavyWeights is equipped, if not, try to equip it
+        local equippedTool = character:FindFirstChild('[HeavyWeights]')
+        if not equippedTool then
+            local backpackTool = Backpack:FindFirstChild('[HeavyWeights]')
+            if backpackTool then
+                humanoid:EquipTool(backpackTool)
+            end
+        end
+    end)
+    
     task.spawn(mainProcess)
     if respawnConnection then
         respawnConnection:Disconnect()
