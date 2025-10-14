@@ -12,11 +12,22 @@ getgenv().wanderkidd_tabs = tabs
 
 local networkSection = tabs.lua:AddLeftGroupbox('Shadow-Clone Jutsu')
 
-local logsSection = tabs.lua:AddRightGroupbox('Info')
-logsSection:AddLabel(
+local settingsTabBox = tabs.lua:AddRightTabbox()
+
+local infoTab = settingsTabBox:AddTab('Info')
+infoTab:AddLabel(
     'Note: Fake Pos will only work on the normal version of Unamed Enhancements and not the beta version.',
     true
 )
+
+local settingsTab = settingsTabBox:AddTab('Settings')
+settingsTab:AddButton({
+    Text = 'Rejoin',
+    Func = function()
+        game:GetService("TeleportService"):Teleport(game.PlaceId, game:GetService("Players").LocalPlayer)
+    end,
+    DoubleClick = false,
+})
 
 
 getgenv().wanderkiddfakepos = getgenv().wanderkiddfakepos or {}
@@ -37,10 +48,8 @@ if not wanderkiddfakepos._connection then
                 pcall(function()
                     local character = game.Players.LocalPlayer.Character
                     if character and character:FindFirstChild('HumanoidRootPart') then
-                        -- NEW METHOD: Toggle NetworkIsSleeping to appear frozen, not laggy
                         local hrp = character.HumanoidRootPart
                         
-                        -- Toggle between true/false to create frozen effect instead of laggy
                         if wanderkiddfakepos._toggleState then
                             sethiddenproperty(hrp, 'NetworkIsSleeping', true)
                         else
@@ -60,7 +69,6 @@ if not wanderkiddfakepos._toggleCreated then
         Callback = function(value)
             wanderkiddfakepos.Network.FakePos = value
             if value then
-                -- NEW METHOD: Initialize toggle state for frozen effect
                 wanderkiddfakepos._toggleState = true
                 setfflag('S2PhysicsSenderRate', '1')
                 setfpscap(1)
@@ -68,7 +76,6 @@ if not wanderkiddfakepos._toggleCreated then
                 setfflag('S2PhysicsSenderRate', '20000')
                 setfpscap(240)
             else
-                -- Disable fake pos
                 setfflag('S2PhysicsSenderRate', '20000')
                 setfpscap(240)
                 wanderkiddfakepos._toggleState = nil
@@ -104,10 +111,8 @@ if not wanderkiddfakepos._toggleCreated then
     wanderkiddfakepos._toggleCreated = true
 end
 
--- Create TabBox for Misc and Farm sections
-local TabBox = tabs.lua:AddRightTabbox() -- Add Tabbox on right side
+local TabBox = tabs.lua:AddRightTabbox()
 
--- Anything we can do in a Groupbox, we can do in a Tabbox tab (AddToggle, AddSlider, AddLabel, etc etc...)
 local Tab1 = TabBox:AddTab('Misc')
 local Tab2 = TabBox:AddTab('Farm')
 
@@ -179,7 +184,6 @@ local function StopThreatDetection()
     end
 end
 
--- Add RPG + Grenade Detection Toggle
 Tab1:AddToggle('CombinedThreatDetection', {
     Text = 'RPG + Grenade Detection',
     Default = false,
@@ -274,10 +278,8 @@ Tab1:AddToggle('AutoBlockToggle', {
                         return
                     end
 
-                    -- Fire block request
                     game.ReplicatedStorage.MainEvent:FireServer('Block', true)
 
-                    -- Stop specific animation
                     local hum = char:FindFirstChildOfClass('Humanoid')
                     if hum then
                         for _, anim in ipairs(hum:GetPlayingAnimationTracks()) do
@@ -289,7 +291,6 @@ Tab1:AddToggle('AutoBlockToggle', {
                         end
                     end
 
-                    -- Remove block status effect
                     local effects = char:FindFirstChild('BodyEffects')
                     if effects and effects:FindFirstChild('Block') then
                         effects.Block:Destroy()
@@ -329,7 +330,6 @@ Tab1:AddToggle('AntiFlingToggle', {
         local LocalPlayer = Players.LocalPlayer
         
         if state then
-            -- Disconnect existing connection if any
             if _G.fling then 
                 _G.fling:Disconnect() 
                 _G.fling = nil
@@ -343,7 +343,6 @@ Tab1:AddToggle('AntiFlingToggle', {
                 if not hrp then return end
                 
                 local last = hrp.Position
-                print("Anti-Fling enabled")
                 
                 _G.fling = rs.Heartbeat:Connect(function()
                     if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
@@ -353,34 +352,27 @@ Tab1:AddToggle('AntiFlingToggle', {
                     local currentHrp = LocalPlayer.Character.HumanoidRootPart
                     local distance = (currentHrp.Position - last).Magnitude
                     
-                    -- Ultra-sensitive detection (1 stud) to catch punching scripts
                     if distance > 1 then
-                        print("Anti-Fling: Detected fling from punching script, teleporting back")
-                        
-                        -- Immediate and aggressive protection
                         currentHrp.CFrame = CFrame.new(last)
                         currentHrp.Velocity = Vector3.zero
                         currentHrp.AssemblyLinearVelocity = Vector3.zero
                         currentHrp.AssemblyAngularVelocity = Vector3.zero
                         
-                        -- Destroy ALL body movers and constraints
                         for _, obj in pairs(currentHrp:GetChildren()) do
                             if obj:IsA("BodyVelocity") or obj:IsA("BodyAngularVelocity") or obj:IsA("BodyPosition") or obj:IsA("BodyThrust") or obj:IsA("BodyMover") then
                                 obj:Destroy()
                             end
                         end
                         
-                        -- Also check and destroy body movers in character
                         for _, obj in pairs(LocalPlayer.Character:GetChildren()) do
                             if obj:IsA("BodyVelocity") or obj:IsA("BodyAngularVelocity") or obj:IsA("BodyPosition") or obj:IsA("BodyThrust") or obj:IsA("BodyMover") then
                                 obj:Destroy()
                             end
                         end
                         
-                        -- Ultra-aggressive position forcing
                         task.spawn(function()
                             for i = 1, 10 do
-                                task.wait(0.01) -- Much faster correction
+                                task.wait(0.01)
                                 if currentHrp then
                                     currentHrp.CFrame = CFrame.new(last)
                                     currentHrp.Velocity = Vector3.zero
@@ -390,7 +382,6 @@ Tab1:AddToggle('AntiFlingToggle', {
                             end
                         end)
                         
-                        -- Additional protection - freeze character briefly
                         local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
                         if humanoid then
                             humanoid.PlatformStand = true
@@ -403,17 +394,14 @@ Tab1:AddToggle('AntiFlingToggle', {
                 end)
             end
             
-            -- Start immediately if character exists
             startAntiFling()
             
-            -- Also start when character respawns
             _G.characterAddedConnection = LocalPlayer.CharacterAdded:Connect(function()
-                task.wait(1) -- Wait for character to fully load
+                task.wait(1)
                 startAntiFling()
             end)
             
         else
-            -- Disable anti-fling
             if _G.fling then 
                 _G.fling:Disconnect() 
                 _G.fling = nil
@@ -422,15 +410,10 @@ Tab1:AddToggle('AntiFlingToggle', {
                 _G.characterAddedConnection:Disconnect()
                 _G.characterAddedConnection = nil
             end
-            print("Anti-Fling disabled")
         end
     end,
 })
 
--- Farm section is now Tab2
-
-
--- Your existing services and variables
 local Players = game:GetService('Players')
 local RunService = game:GetService('RunService')
 local TweenService = game:GetService('TweenService')
@@ -571,7 +554,6 @@ local function startAntiAFK()
         local character = LocalPlayer.Character
         if character and character:FindFirstChild('Humanoid') then
             local humanoid = character.Humanoid
-            -- Move slightly to prevent AFK detection
             humanoid:Move(Vector3.new(math.random(-1, 1), 0, math.random(-1, 1)))
         end
     end)
@@ -583,14 +565,12 @@ local function startAntiSit()
         antiSitConnection = nil
     end
     
-    -- Disable all existing seats
     for _, seat in ipairs(workspace:GetDescendants()) do
         if seat:IsA('Seat') or seat:IsA('VehicleSeat') then
             seat.CanTouch = false
         end
     end
     
-    -- Connect to new seats
     antiSitConnection = workspace.DescendantAdded:Connect(function(seat)
         if farming and (seat:IsA('Seat') or seat:IsA('VehicleSeat')) then
             seat.CanTouch = false
@@ -611,7 +591,6 @@ local function stopAntiSit()
         antiSitConnection = nil
     end
     
-    -- Re-enable all seats
     for _, seat in ipairs(workspace:GetDescendants()) do
         if seat:IsA('Seat') or seat:IsA('VehicleSeat') then
             seat.CanTouch = true
@@ -665,7 +644,7 @@ local function collectDrops()
                 local clickDetector = drop:FindFirstChildWhichIsA('ClickDetector', true)
                 if clickDetector then
                     fireclickdetector(clickDetector)
-                    task.wait(0.5) -- Slower pickup wait
+                    task.wait(0.5)
                 end
             end
         end
@@ -677,7 +656,6 @@ function startFarming()
         return
     end
     
-    -- Start anti-AFK and anti-sit
     startAntiAFK()
     startAntiSit()
     
@@ -711,9 +689,8 @@ function startFarming()
                         tpInsideModelTween(cashier)
                         autoAttack()
                         
-                        -- Punch counting for ATM switching
                         local punchCount = 0
-                        local maxPunches = 10 -- Switch if ATM doesn't open after 10 hits
+                        local maxPunches = 10
                         local originalHealth = humanoid.Health
                         local atmDefeated = false
                         
@@ -721,30 +698,25 @@ function startFarming()
                             collectDrops()
                             tpInsideModelTween(cashier)
                             
-                            -- Check if health hasn't decreased (ATM not opening)
                             if humanoid.Health >= originalHealth then
                                 punchCount = punchCount + 1
                                 if punchCount > maxPunches then
-                                    -- ATM not opening after 10+ hits, switch immediately
                                     break
                                 end
                             else
-                                -- Health decreased, ATM is being damaged
                                 punchCount = 0
                                 originalHealth = humanoid.Health
                             end
                         end
                         
-                        -- Check if ATM was defeated (health reached 0)
                         if humanoid.Health <= 0 then
                             atmDefeated = true
                         end
                         
-                        -- Always wait for cash collection after ATM interaction
                         if atmDefeated then
                             local dropsRemain = true
                             local collectionAttempts = 0
-                            local maxCollectionAttempts = 50 -- Prevent infinite loop
+                            local maxCollectionAttempts = 50
                             
                             while farming and dropsRemain and collectionAttempts < maxCollectionAttempts do
                                 dropsRemain = false
@@ -774,7 +746,7 @@ function startFarming()
                                 if dropsRemain then
                                     collectDrops()
                                     tpInsideModelTween(cashier)
-                                    task.wait(0.3) -- Slower drop collection cycle
+                                    task.wait(0.3)
                                 end
                             end
                         end
@@ -797,19 +769,15 @@ function stopFarming()
     attackThread = nil
     setNoClip(false)
     
-    -- Stop anti-AFK and anti-sit
     stopAntiAFK()
     stopAntiSit()
 end
 
 
--- UI Toggles
--- Add ATM Farm toggle on top
 Tab2:AddToggle('cashatmfarm', {
     Text = 'ATM Farm',
     Default = false,
     Callback = function(Value)
-        -- Disable Stomp Farm when ATM Farm enabled
         Toggles.AutoStompFarm:SetValue(false)
 
         if Value then
@@ -919,7 +887,6 @@ local function StopStompFarm()
         stompTask = nil
     end
     
-    -- Teleport back to original position when disabled
     if originalStompPosition then
         Teleport(originalStompPosition)
         originalStompPosition = nil
@@ -941,7 +908,6 @@ Tab2:AddToggle('AutoStompFarm', {
     Callback = function(Value)
         farmEnabled = Value
         if farmEnabled then
-            -- Save original position when enabling
             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('HumanoidRootPart') then
                 originalStompPosition = LocalPlayer.Character.HumanoidRootPart.CFrame
             end
@@ -953,7 +919,6 @@ Tab2:AddToggle('AutoStompFarm', {
                 )
             then
                 LocalPlayer.CharacterAdded:Wait()
-                -- Save position after character loads
                 if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('HumanoidRootPart') then
                     originalStompPosition = LocalPlayer.Character.HumanoidRootPart.CFrame
                 end
@@ -995,7 +960,7 @@ do
         if tool then
             if character:FindFirstChild(toolName) ~= tool then
                 humanoid:EquipTool(tool)
-                task.wait(0.01) -- Super fast equip wait
+                task.wait(0.01)
             end
             return tool
         end
@@ -1015,7 +980,6 @@ do
     local function teleportAndFacePart(character, part)
         local hrp = character:FindFirstChild('HumanoidRootPart')
         if hrp and part then
-            -- Teleport on top of the punching bag standing up straight
             local bagPosition = part.Position
             hrp.CFrame = CFrame.new(bagPosition + Vector3.new(0, 2, 0), bagPosition + Vector3.new(0, 0, 1))
         end
@@ -1038,16 +1002,16 @@ do
                 and player.Character:FindFirstChild(toolName) ~= tool
             then
                 humanoid:EquipTool(tool)
-                task.wait(0.01) -- Super fast equip wait
+                task.wait(0.01)
             end
             if tool.Activate then
                 tool:Activate()
             end
-            task.wait(0.01) -- Super fast activation wait
+            task.wait(0.01)
             humanoid:UnequipTools()
-            task.wait(0.01) -- Super fast unequip wait
+            task.wait(0.01)
             humanoid:EquipTool(tool)
-            task.wait(0.01) -- Super fast re-equip wait
+            task.wait(0.01)
         end
         activateLoopRunning = false
     end
@@ -1113,7 +1077,7 @@ do
         end)
         charAddedConn = player.CharacterAdded:Connect(function(char)
             if toggleEnabled then
-                task.wait(0.01) -- Super fast respawn wait
+                task.wait(0.01)
                 teleportAndFacePart(char, targetPart)
                 equipTool(char)
             end
@@ -1129,7 +1093,6 @@ do
     })
 end
 
--- Lettuce position memory
 local originalLettucePosition = nil
 
 Tab2:AddToggle('lettuceToggle', {
@@ -1137,12 +1100,10 @@ Tab2:AddToggle('lettuceToggle', {
     Default = false,
     Callback = function(value)
         if value then
-            -- Save original position when enabling
             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('HumanoidRootPart') then
                 originalLettucePosition = LocalPlayer.Character.HumanoidRootPart.CFrame
             end
         else
-            -- Teleport back to original position when disabled
             if originalLettucePosition then
                 if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('HumanoidRootPart') then
                     LocalPlayer.Character.HumanoidRootPart.CFrame = originalLettucePosition
@@ -1180,7 +1141,7 @@ end
 
 local function buyLettuce()
     LocalPlayer.Character:PivotTo(CFrame.new(-86.74, 23.32, -632.27))
-    task.wait(0.05) -- Super fast teleport wait
+    task.wait(0.05)
     local shop = Workspace:FindFirstChild('Ignored')
         and Workspace.Ignored:FindFirstChild('Shop')
     if shop then
@@ -1195,32 +1156,28 @@ local function buyLettuce()
             end
         end
     end
-    task.wait(0.1) -- Super fast buy wait
+    task.wait(0.1)
 end
 
 task.spawn(function()
     while true do
         if Toggles.lettuceToggle.Value then
-            -- Check if lettuce is equipped
             local hasLettuce = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('[Lettuce]')
             
             if not hasLettuce then
-                -- No lettuce equipped, buy new one
                 buyLettuce()
                 equipLettuce()
             end
             
-            -- Try to activate lettuce
             local activated = activateLettuce()
             
-            -- If activation failed (lettuce was eaten), buy new one
             if not activated then
                 task.wait(0.05)
                 buyLettuce()
                 equipLettuce()
             end
         end
-        task.wait(0.05) -- Super fast cycle time
+        task.wait(0.05)
     end
 end)
 
@@ -1277,7 +1234,6 @@ local function fireClickDetector(shopItem)
 end
 
 local function equipTool(toolName)
-    -- First check if already equipped
     local character = LocalPlayer.Character
     if character then
         local equippedTool = character:FindFirstChild(toolName)
@@ -1286,18 +1242,17 @@ local function equipTool(toolName)
         end
     end
     
-    -- Try to find and equip from backpack
-    for i = 1, 50 do -- Reduced iterations for faster response
+    for i = 1, 50 do
         local tool = Backpack:FindFirstChild(toolName)
         if tool and tool:IsA('Tool') then
             local humanoid = character and character:FindFirstChild('Humanoid')
             if humanoid then
                 humanoid:EquipTool(tool)
-                task.wait(0.1) -- Short wait to ensure tool is equipped
+                task.wait(0.1)
                 return tool
             end
         end
-        task.wait(0.05) -- Reduced wait time for faster checking
+        task.wait(0.05)
     end
     return nil
 end
@@ -1322,10 +1277,8 @@ local function autoActivateTool(tool)
             return
         end
         
-        -- Check if tool is equipped, if not, auto-equip it
         local equippedTool = character:FindFirstChild('[HeavyWeights]')
         if not equippedTool then
-            -- Try to find tool in backpack and equip it
             local backpackTool = Backpack:FindFirstChild('[HeavyWeights]')
             if backpackTool then
                 humanoid:EquipTool(backpackTool)
@@ -1335,7 +1288,6 @@ local function autoActivateTool(tool)
             tool = equippedTool
         end
         
-        -- Activate tool if equipped
         if tool and tool.Parent == character then
             pcall(function()
                 tool:Activate()
@@ -1351,15 +1303,13 @@ local function mainProcess()
         return
     end
     fireClickDetector(shopItem)
-    task.wait(0.5) -- Reduced wait time for faster operation
+    task.wait(0.5)
     teleportTo(Vector3.new(768.47, 112.62, -787.92))
     
-    -- Ensure tool is equipped and start auto-activation
     local tool = equipTool('[HeavyWeights]')
     if tool then
         autoActivateTool(tool)
     else
-        -- If tool not found, try again after a short delay
         task.wait(0.5)
         tool = equipTool('[HeavyWeights]')
         if tool then
@@ -1383,7 +1333,6 @@ local function onToggleChanged(value)
             toolMonitorConnection = nil
         end
         
-        -- Teleport back to original position when disabled
         if originalWeightPosition then
             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('HumanoidRootPart') then
                 LocalPlayer.Character.HumanoidRootPart.CFrame = originalWeightPosition
@@ -1393,12 +1342,10 @@ local function onToggleChanged(value)
         return
     end
     
-    -- Save original position when enabling
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild('HumanoidRootPart') then
         originalWeightPosition = LocalPlayer.Character.HumanoidRootPart.CFrame
     end
     
-    -- Start tool monitoring to auto-equip when unequipped
     if toolMonitorConnection then
         toolMonitorConnection:Disconnect()
         toolMonitorConnection = nil
@@ -1419,7 +1366,6 @@ local function onToggleChanged(value)
             return
         end
         
-        -- Check if HeavyWeights is equipped, if not, try to equip it
         local equippedTool = character:FindFirstChild('[HeavyWeights]')
         if not equippedTool then
             local backpackTool = Backpack:FindFirstChild('[HeavyWeights]')
@@ -1444,10 +1390,8 @@ end
 
 Toggles[toggleName]:OnChanged(onToggleChanged)
 
--- Player List Section
 local playerListSection = tabs.lua:AddLeftGroupbox('PlayerList')
 
--- Get all players in the game
 local function getAllPlayers()
     local players = {}
     for _, player in pairs(game.Players:GetPlayers()) do
@@ -1459,7 +1403,6 @@ local function getAllPlayers()
     return players
 end
 
--- Create dropdown with all players
 local playerDropdown = playerListSection:AddDropdown('player_dropdown', {
     Values = {},
     Default = 1,
@@ -1467,12 +1410,9 @@ local playerDropdown = playerListSection:AddDropdown('player_dropdown', {
     Text = 'Select Player',
     Tooltip = 'Choose a player from the list',
     Callback = function(value)
-        -- Handle player selection
-        print('Selected player:', value)
     end,
 })
 
--- Update dropdown values with current players
 local function updatePlayerDropdown()
     local players = getAllPlayers()
     local playerNames = {}
@@ -1482,12 +1422,10 @@ local function updatePlayerDropdown()
     playerDropdown:SetValues(playerNames)
 end
 
--- Initialize dropdown
 updatePlayerDropdown()
 
--- Update dropdown when players join/leave
 game.Players.PlayerAdded:Connect(function()
-    task.wait(0.1) -- Small delay to ensure player is fully loaded
+    task.wait(0.1)
     updatePlayerDropdown()
 end)
 
@@ -1495,24 +1433,19 @@ game.Players.PlayerRemoving:Connect(function()
     updatePlayerDropdown()
 end)
 
--- Add live note label (positioned above search input)
 local liveNote = playerListSection:AddLabel('result: ?', true)
 liveNote.Name = 'live_note'
 
--- Search functionality
-local lastValidMatch = nil -- Store the last valid player match
+local lastValidMatch = nil
 
 local searchInput = playerListSection:AddInput('player_search', {
     Text = 'player search',
     Tooltip = '$$$SUDO APT OPSEC',
     Placeholder = '',
     Callback = function(value)
-        print('Search input changed to:', value)
         local players = getAllPlayers()
-        print('Total players found:', #players)
         
         if value == '' then
-            -- Empty input - show default
             liveNote:SetText('result: ?')
             lastValidMatch = nil
             return
@@ -1522,7 +1455,6 @@ local searchInput = playerListSection:AddInput('player_search', {
         local closestMatch = nil
         local closestDistance = math.huge
         
-        -- Find closest match - first try exact prefix matches, then any contains matches
         local exactMatches = {}
         local containsMatches = {}
         
@@ -1530,18 +1462,14 @@ local searchInput = playerListSection:AddInput('player_search', {
             local username = player.username:lower()
             local displayName = player.displayName:lower()
             
-            -- Check if search term matches username or display name (starts with search term)
             if username:sub(1, #searchTerm) == searchTerm or displayName:sub(1, #searchTerm) == searchTerm then
                 table.insert(exactMatches, player)
-            -- If no exact match, check if the letter exists anywhere in the name
             elseif username:find(searchTerm, 1, true) or displayName:find(searchTerm, 1, true) then
                 table.insert(containsMatches, player)
             end
         end
         
-        -- Prioritize exact matches first
         if #exactMatches > 0 then
-            -- Calculate distance for exact matches (closest to start of name)
             for _, player in ipairs(exactMatches) do
                 local username = player.username:lower()
                 local displayName = player.displayName:lower()
@@ -1563,48 +1491,35 @@ local searchInput = playerListSection:AddInput('player_search', {
                 end
             end
         elseif #containsMatches > 0 then
-            -- If no exact matches, pick the first contains match
             closestMatch = containsMatches[1]
         end
         
-        print('Closest match found:', closestMatch and closestMatch.username or 'none')
-        
-        -- Update live note with closest match or keep last valid match
         if closestMatch then
-            -- Store this as the last valid match
             lastValidMatch = closestMatch
             
-            -- Show full username
             local displayUsername = closestMatch.username
             liveNote:SetText('result: ' .. displayUsername .. ' (' .. closestMatch.displayName .. ')')
             
-            -- Auto-select the closest match in dropdown
             local playerNames = {}
             for _, player in ipairs(players) do
                 table.insert(playerNames, player.username)
             end
             
-            -- Update dropdown values first to ensure they're current
             playerDropdown:SetValues(playerNames)
             
-            -- Find the index of the matched player and select it
             for i, name in ipairs(playerNames) do
                 if name == closestMatch.username then
-                    -- Try both methods to ensure selection works
                     task.wait(0.01)
-                    playerDropdown:SetValue(i) -- Try by index
+                    playerDropdown:SetValue(i)
                     task.wait(0.01)
-                    playerDropdown:SetValue(closestMatch.username) -- Try by value
-                    print('Auto-selected player:', closestMatch.username, 'at index:', i)
+                    playerDropdown:SetValue(closestMatch.username)
                     break
                 end
             end
         else
-            -- No match found - keep showing the last valid match
             if lastValidMatch then
                 local displayUsername = lastValidMatch.username
                 liveNote:SetText('result: ' .. displayUsername .. ' (' .. lastValidMatch.displayName .. ')')
-                print('No match found, keeping last valid match:', lastValidMatch.username)
             else
                 liveNote:SetText('result: ')
             end
@@ -1612,11 +1527,6 @@ local searchInput = playerListSection:AddInput('player_search', {
     end,
 })
 
--- ===========================================
--- KNOCK BUTTON FUNCTIONALITY
--- ===========================================
-
--- Knock Check Function
 local function KnockCheck(player)
     if player and player.Character then
         local bodyEffects = player.Character:FindFirstChild("BodyEffects")
@@ -1625,20 +1535,65 @@ local function KnockCheck(player)
             return knockOut and knockOut.Value == true
         end
     end
+
     return false
 end
 
--- Sticky Silent Aim Variables
+local function isPlayerDead(player)
+    if player and player.Character then
+        local bodyEffects = player.Character:FindFirstChild("BodyEffects")
+        if bodyEffects then
+            local deathEffect = bodyEffects:FindFirstChild("SDeath")
+            return deathEffect and deathEffect.Value == true
+        end
+    end
+    return false
+end
+
+local function checkStompSuccess(player, originalHealth)
+    if not player or not player.Character then
+        return false
+    end
+    
+    local bodyEffects = player.Character:FindFirstChild("BodyEffects")
+    if not bodyEffects then
+        return false
+    end
+    
+    local healthEffect = bodyEffects:FindFirstChild("Health")
+    local currentHealth = healthEffect and healthEffect.Value or 0
+    
+    local isDead = isPlayerDead(player)
+    local stillKnocked = KnockCheck(player)
+    
+    -- More detailed debug info
+    local healthDiff = originalHealth - currentHealth
+    api:notify(string.format("Health: %.1f -> %.1f (Diff: %.1f, Dead: %s, Knocked: %s)", originalHealth, currentHealth, healthDiff, tostring(isDead), tostring(stillKnocked)), 3)
+    
+    -- Try multiple verification methods
+    local healthDecreased = healthDiff > 0.5  -- Lower threshold
+    local healthZero = currentHealth <= 0
+    local significantDamage = healthDiff > 5.0  -- Significant damage
+    
+    -- Check if target is no longer knocked (might indicate stomp hit)
+    local wasKnockedBefore = true  -- We assume they were knocked since we're stomping
+    local noLongerKnocked = wasKnockedBefore and not stillKnocked
+    
+    local success = isDead or healthDecreased or healthZero or significantDamage or noLongerKnocked
+    
+    api:notify(string.format("Verification: Damage=%.1f, Dead=%s, Success=%s", healthDiff, tostring(isDead), tostring(success)), 2)
+    
+    return success
+end
+
 local stickyAimEnabled = false
 local stickyAimTarget = nil
 local originalNamecall = nil
-local stickyAimActive = false -- Only redirect when actively shooting target
+local stickyAimActive = false
 
--- Knock Button State Variables
 local knockSequenceActive = false
 local savedOriginalPosition = nil
 
--- Forcefield Check Function
 local function hasForcefield(player)
     if player and player.Character then
         local forcefield = player.Character:FindFirstChild("ForceField")
@@ -1647,42 +1602,35 @@ local function hasForcefield(player)
     return false
 end
 
--- Sticky Silent Aim Function
 local function enableStickySilentAim(targetPlayer)
     if not targetPlayer then return end
     
     stickyAimEnabled = true
     stickyAimTarget = targetPlayer
-    print('Sticky silent aim enabled for:', targetPlayer.Name)
     
-    -- Hook the ShootGun remote to redirect shots to target
     if not originalNamecall then
-        originalNamecall = getrawmetatable(game).__namecall
-        
-        getrawmetatable(game).__namecall = newcclosure(function(self, ...)
+        pcall(function()
+            originalNamecall = getrawmetatable(game).__namecall
+            
+            getrawmetatable(game).__namecall = function(self, ...)
             local args = {...}
             local method = getnamecallmethod()
             
             if stickyAimEnabled and stickyAimTarget and stickyAimTarget.Character and stickyAimActive then
                 if method == "FireServer" and self == MainEvent and args[1] == "ShootGun" then
-                    print('Silent aim hook triggered for:', stickyAimTarget.Name)
-                    -- Check for forcefield before redirecting
                     if hasForcefield(stickyAimTarget) then
-                        print('Target has forcefield, skipping silent aim redirect for:', stickyAimTarget.Name)
-                        -- Don't redirect the shot, let it go to original target
                     else
                         local targetHead = stickyAimTarget.Character:FindFirstChild("Head")
                         if targetHead then
-                            -- Redirect shot to sticky aim target
                             args[4] = targetHead.Position
                             args[5] = targetHead
-                            print('Silent aim redirected to:', stickyAimTarget.Name)
                         end
                     end
                 end
             end
             
             return originalNamecall(self, ...)
+        end
         end)
     end
 end
@@ -1691,22 +1639,18 @@ local function disableStickySilentAim()
     stickyAimEnabled = false
     stickyAimTarget = nil
     stickyAimActive = false
-    print('Sticky silent aim disabled')
 end
 
--- Main Event Setup
 local MainEvent = nil
-if game:GetService("ReplicatedStorage"):FindFirstChild("MainEvent") then -- Da Hood
+if game:GetService("ReplicatedStorage"):FindFirstChild("MainEvent") then
     MainEvent = game:GetService("ReplicatedStorage").MainEvent
-elseif game:GetService("ReplicatedStorage"):FindFirstChild("MAINEVENT") then -- Idk Da Hood
+elseif game:GetService("ReplicatedStorage"):FindFirstChild("MAINEVENT") then
     MainEvent = game:GetService("ReplicatedStorage").MAINEVENT
-elseif game:GetService("ReplicatedStorage"):WaitForChild("MainRemotes"):WaitForChild("MainRemoteEvent") then -- Der Hood
+elseif game:GetService("ReplicatedStorage"):WaitForChild("MainRemotes"):WaitForChild("MainRemoteEvent") then
     MainEvent = game:GetService("ReplicatedStorage"):WaitForChild("MainRemotes"):WaitForChild("MainRemoteEvent")
 else
-    print("Couldn't find MainEvent, game not supported.")
 end
 
--- Add teleport and bring buttons with sub-buttons
 local teleportButton = playerListSection:AddButton({
     Text = 'Teleport',
     Func = function()
@@ -1716,46 +1660,34 @@ local teleportButton = playerListSection:AddButton({
             if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild('HumanoidRootPart') then
                 local localPlayer = game.Players.LocalPlayer
                 if localPlayer.Character and localPlayer.Character:FindFirstChild('HumanoidRootPart') then
-                    -- Teleport onto their head (5 studs above their position)
                     local targetPosition = targetPlayer.Character.HumanoidRootPart.Position + Vector3.new(0, 5, 0)
                     localPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(targetPosition)
-                    print('Teleported onto head of:', selectedPlayer)
                 end
-            else
-                print('Target player not found or not loaded:', selectedPlayer)
             end
-        else
-            print('No player selected')
         end
     end,
     DoubleClick = false,
     Tooltip = 'Teleport you to the selected target.',
 })
 
--- Function to handle the actual knock sequence
 local function proceedWithKnock(Target, selectedPlayer, localPlayer, humanoidRootPart, originalCFrame)
     local targetHRP = Target.Character:FindFirstChild("HumanoidRootPart")
     local targetHead = Target.Character:FindFirstChild("Head")
     
     if targetHead and targetHRP then
-        -- Enable sticky silent aim for this target
         enableStickySilentAim(Target)
         
-        -- Initial teleport to target's head
         local targetHeadPos = targetHead.Position
         local stickToHeadPos = Vector3.new(targetHeadPos.X, targetHeadPos.Y + 5, targetHeadPos.Z)
         humanoidRootPart.CFrame = CFrame.new(stickToHeadPos)
-        print('Teleported to head of:', selectedPlayer)
         
-        -- Continuous auto-shooting loop until target is knocked
         task.spawn(function()
             while Target and Target.Character and not KnockCheck(Target) do
-                -- Check if target left the game
                 if not game.Players:FindFirstChild(selectedPlayer) then
                     api:notify(selectedPlayer .. " left the game", 5)
-                    updatePlayerDropdown() -- Refresh player list
+                    updatePlayerDropdown()
                     disableStickySilentAim()
-                    return -- Exit the function
+                    return
                 end
                 
                 if not localPlayer.Character or not localPlayer.Character:FindFirstChild("HumanoidRootPart") then
@@ -1764,7 +1696,6 @@ local function proceedWithKnock(Target, selectedPlayer, localPlayer, humanoidRoo
                 
                 local currentTool = localPlayer.Character:FindFirstChildOfClass("Tool")
                 if not currentTool or not currentTool:FindFirstChild("Handle") then
-                    print('No gun equipped, stopping knock sequence')
                     break
                 end
                 
@@ -1772,70 +1703,52 @@ local function proceedWithKnock(Target, selectedPlayer, localPlayer, humanoidRoo
                 local currentTargetHead = Target.Character:FindFirstChild("Head")
                 
                 if currentTargetHRP and currentTargetHead then
-                    -- FIRMLY stick to target's head - no lag, no movement issues
                     local targetHeadPos = currentTargetHead.Position
                     local stickToHeadPos = Vector3.new(targetHeadPos.X, targetHeadPos.Y + 5, targetHeadPos.Z)
                     
-                    -- Force position update every frame for firm sticking
                     humanoidRootPart.CFrame = CFrame.new(stickToHeadPos)
                     humanoidRootPart.Position = stickToHeadPos
                     
                     if hasForcefield(Target) then
-                        -- Target has forcefield, wait without shooting but keep sticking
-                        print('Target has forcefield, waiting but staying stuck to head...')
-                        task.wait(0.1) -- Shorter wait to maintain firm sticking
+                        task.wait(0.1)
                     else
-                        -- Auto-shoot multiple times rapidly while firmly stuck to head
                         for i = 1, 3 do
                             if Target and Target.Character and not KnockCheck(Target) and not hasForcefield(Target) then
-                                -- Maintain firm position while shooting
                                 humanoidRootPart.CFrame = CFrame.new(stickToHeadPos)
                                 humanoidRootPart.Position = stickToHeadPos
                                 
-                                -- Enable sticky aim only when actively shooting
                                 stickyAimActive = true
-                                print('About to shoot with sticky aim at:', selectedPlayer)
                                 MainEvent:FireServer("ShootGun", currentTool.Handle, currentTool.Handle.Position, currentTargetHead.Position, currentTargetHead, Vector3.new(0, 1, 0))
-                                print('Firm head shot', i, 'at:', selectedPlayer)
-                                task.wait(0.01) -- Small delay before disabling
-                                stickyAimActive = false -- Disable after shooting
-                                task.wait(0.05) -- Very fast shooting
+                                task.wait(0.01)
+                                stickyAimActive = false
+                                task.wait(0.05)
                             else
                                 if hasForcefield(Target) then
-                                    print('Forcefield detected during shooting, stopping shots but staying stuck')
                                 end
                                 break
                             end
                         end
                     end
                 else
-                    print('Target lost, stopping knock sequence')
                     break
                 end
                 
-                task.wait(0.01) -- Very short wait for maximum sticking performance
+                task.wait(0.01)
             end
             
-            -- Check if target was successfully knocked
             if Target and Target.Character and KnockCheck(Target) then
-                print('Successfully knocked player:', selectedPlayer)
             else
-                print('Failed to knock player or target left:', selectedPlayer)
             end
             
-            -- Disable sticky silent aim
             disableStickySilentAim()
             
-            -- Teleport back to original position
             if localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
                 localPlayer.Character.HumanoidRootPart.CFrame = originalCFrame
-                print('Teleported back to original position')
             end
         end)
     end
 end
 
--- KNOCK BUTTON - This is the main functionality you requested
 local teleportSubButton = teleportButton:AddButton({
     Text = 'Knock',
     Func = function()
@@ -1854,98 +1767,65 @@ local teleportSubButton = teleportButton:AddButton({
                     local targetHead = Target.Character:FindFirstChild("Head")
                     
                     if targetHead and targetHRP then
-                        print('Starting knock sequence for:', selectedPlayer)
-                        
-                        -- Check if player is already knocked out
                         if KnockCheck(Target) then
                             api:notify(selectedPlayer .. " is already knocked.", 2)
-                            return -- Exit the function
+                            return
                         end
                         
-                        -- Check if target has forcefield before starting
                         if hasForcefield(Target) then
-                            -- Use api:notify for forcefield notification
                             api:notify(selectedPlayer .. " is in an active protective barrier. Waiting...", 10)
                             
-                            -- Wait for forcefield to end
                             task.spawn(function()
                                 while hasForcefield(Target) and Target and Target.Character do
-                                    -- Check if target left the game
                                     if not game.Players:FindFirstChild(selectedPlayer) then
                                         api:notify(selectedPlayer .. " left the game", 5)
-                                        updatePlayerDropdown() -- Refresh player list
-                                        return -- Exit the function
+                                        updatePlayerDropdown()
+                                        return
                                     end
                                     task.wait(0.1)
                                 end
                                 
-                                -- Now proceed with the knock sequence
                                 if Target and Target.Character then
                                     proceedWithKnock(Target, selectedPlayer, localPlayer, humanoidRootPart, originalCFrame)
                                 end
                             end)
                         else
-                            -- No forcefield, proceed immediately
                             proceedWithKnock(Target, selectedPlayer, localPlayer, humanoidRootPart, originalCFrame)
                         end
-                    else
-                        print('Target missing head or rootpart')
                     end
-                else
-                    print('Please equip your gun before using Knock')
                 end
-            else
-                print('Target player not found or not loaded:', selectedPlayer)
             end
-        else
-            print('No player selected for knock')
         end
     end,
     DoubleClick = false,
 })
 
-local testButton = playerListSection:AddButton({
-    Text = 'Soon',
-    Func = function()
-        print('Soon button pressed - feature coming soon!')
-    end,
-    DoubleClick = false,
-})
-
--- Function to handle the actual bring sequence
-local function proceedWithBring(Target, selectedPlayer, localPlayer, humanoidRootPart, originalCFrame)
+local function proceedWithStomp(Target, selectedPlayer, localPlayer, humanoidRootPart, originalCFrame)
     local targetHRP = Target.Character:FindFirstChild("HumanoidRootPart")
     local targetHead = Target.Character:FindFirstChild("Head")
     
     if targetHead and targetHRP then
-        -- Enable sticky silent aim for this target
         enableStickySilentAim(Target)
         
-        -- Initial teleport to target's head
         local targetHeadPos = targetHead.Position
         local stickToHeadPos = Vector3.new(targetHeadPos.X, targetHeadPos.Y + 5, targetHeadPos.Z)
         humanoidRootPart.CFrame = CFrame.new(stickToHeadPos)
-        print('Teleported to head of:', selectedPlayer)
         
-        -- Continuous auto-shooting loop until target is knocked or gun is unequipped
         task.spawn(function()
             while Target and Target.Character and not KnockCheck(Target) do
-                -- Check if target left the game
                 if not game.Players:FindFirstChild(selectedPlayer) then
                     api:notify(selectedPlayer .. " left the game", 5)
-                    updatePlayerDropdown() -- Refresh player list
+                    updatePlayerDropdown()
                     disableStickySilentAim()
-                    return -- Exit the function
+                    return
                 end
                 
                 if not localPlayer.Character or not localPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    print('Character lost, stopping bring sequence')
                     break
                 end
                 
                 local currentTool = localPlayer.Character:FindFirstChildOfClass("Tool")
                 if not currentTool or not currentTool:FindFirstChild("Handle") then
-                    print('Gun unequipped, stopping bring sequence')
                     break
                 end
                 
@@ -1953,109 +1833,348 @@ local function proceedWithBring(Target, selectedPlayer, localPlayer, humanoidRoo
                 local currentTargetHead = Target.Character:FindFirstChild("Head")
                 
                 if currentTargetHRP and currentTargetHead then
-                    -- FIRMLY stick to target's head - no lag, no movement issues
                     local targetHeadPos = currentTargetHead.Position
                     local stickToHeadPos = Vector3.new(targetHeadPos.X, targetHeadPos.Y + 5, targetHeadPos.Z)
                     
-                    -- Force position update every frame for firm sticking
                     humanoidRootPart.CFrame = CFrame.new(stickToHeadPos)
                     humanoidRootPart.Position = stickToHeadPos
                     
                     if hasForcefield(Target) then
-                        -- Target has forcefield, wait without shooting but keep sticking
-                        print('Target has forcefield, waiting but staying stuck to head...')
-                        task.wait(0.1) -- Shorter wait to maintain firm sticking
+                        task.wait(0.1)
                     else
-                        -- Auto-shoot multiple times rapidly while firmly stuck to head
                         for i = 1, 3 do
                             if Target and Target.Character and not KnockCheck(Target) and not hasForcefield(Target) then
-                                -- Maintain firm position while shooting
                                 humanoidRootPart.CFrame = CFrame.new(stickToHeadPos)
                                 humanoidRootPart.Position = stickToHeadPos
                                 
-                                -- Enable sticky aim only when actively shooting
                                 stickyAimActive = true
-                                print('About to shoot with sticky aim at:', selectedPlayer)
                                 MainEvent:FireServer("ShootGun", currentTool.Handle, currentTool.Handle.Position, currentTargetHead.Position, currentTargetHead, Vector3.new(0, 1, 0))
-                                print('Bring head shot', i, 'at:', selectedPlayer)
-                                task.wait(0.01) -- Small delay before disabling
-                                stickyAimActive = false -- Disable after shooting
-                                task.wait(0.05) -- Very fast shooting
+                                task.wait(0.01)
+                                stickyAimActive = false
+                                task.wait(0.05)
+                            else
+                                break
+                            end
+                        end
+                    end
+                else
+                    break
+                end
+                
+                task.wait(0.01)
+            end
+            
+            if Target and Target.Character and KnockCheck(Target) then
+                local originalHeadPos = Target.Character.Head.Position
+                local stompAttempted = false
+                
+                task.wait(0.5)
+                
+                if Target.Character and Target.Character:FindFirstChild("Head") then
+                    local bodyEffects = Target.Character:FindFirstChild("BodyEffects")
+                    local originalHealth = 0
+                    if bodyEffects and bodyEffects:FindFirstChild("Health") then
+                        originalHealth = bodyEffects.Health.Value
+                    end
+                    
+                    local currentHeadPos = Target.Character.Head.Position
+                    local stickToHeadPos = Vector3.new(currentHeadPos.X, currentHeadPos.Y + 5, currentHeadPos.Z)
+                    
+                    humanoidRootPart.CFrame = CFrame.new(stickToHeadPos)
+                    humanoidRootPart.Position = stickToHeadPos
+                    
+                    task.wait(0.1)
+                    
+                    if MainEvent then
+                        -- Stomp first
+                        MainEvent:FireServer("Stomp")
+                        task.wait(0.5)
+                        
+                        -- Verify if target is really stomped
+                        local bodyEffects = Target.Character:FindFirstChild("BodyEffects")
+                        local currentHealth = 0
+                        local isDead = false
+                        
+                        if bodyEffects then
+                            local healthEffect = bodyEffects:FindFirstChild("Health")
+                            if healthEffect then
+                                currentHealth = healthEffect.Value
+                            end
+                            
+                            local deathEffect = bodyEffects:FindFirstChild("SDeath")
+                            if deathEffect then
+                                isDead = deathEffect.Value
+                            end
+                        end
+                        
+                        local healthDiff = originalHealth - currentHealth
+                        
+                        if isDead then
+                            api:notify('Target killed by stomp!', 3)
+                        elseif healthDiff > 1.0 then
+                            api:notify('Stomp hit!', 3)
+                        else
+                            -- If missed, stomp again
+                            api:notify('Stomp might have missed, trying again...', 2)
+                            task.wait(0.3)
+                            MainEvent:FireServer("Stomp")
+                            api:notify('Second stomp fired', 2)
+                        end
+                        
+                        stompAttempted = true
+                    else
+                        api:notify('MainEvent not found for stomp!', 3)
+                    end
+                end
+                
+                if localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    localPlayer.Character.HumanoidRootPart.CFrame = originalCFrame
+                end
+            else
+                if localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    localPlayer.Character.HumanoidRootPart.CFrame = originalCFrame
+                end
+            end
+            
+            disableStickySilentAim()
+        end)
+    end
+end
+
+local stompButton = playerListSection:AddButton({
+    Text = 'Stomp',
+    Func = function()
+        local selectedPlayer = playerDropdown.Value
+        if selectedPlayer and selectedPlayer ~= '' then
+            local Target = game.Players:FindFirstChild(selectedPlayer)
+            local localPlayer = game.Players.LocalPlayer
+            
+            if Target and Target.Character and localPlayer.Character then
+                if KnockCheck(Target) then
+                    local bodyEffects = Target.Character:FindFirstChild("BodyEffects")
+                    local isDead = bodyEffects and bodyEffects:FindFirstChild("SDeath") and bodyEffects.SDeath.Value
+                    
+                    if isDead == false then
+                        local savedPosition = localPlayer.Character.HumanoidRootPart.CFrame
+                        
+                        if Target.Character:FindFirstChild("UpperTorso") then
+                            local bodyEffects = Target.Character:FindFirstChild("BodyEffects")
+                            local originalHealth = 0
+                            if bodyEffects and bodyEffects:FindFirstChild("Health") then
+                                originalHealth = bodyEffects.Health.Value
+                            end
+                            
+                            localPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(Target.Character.UpperTorso.Position + Vector3.new(0, 3, 0))
+                            
+                            task.wait(0.1)
+                            
+                            if MainEvent then
+                                -- Stomp first
+                                MainEvent:FireServer("Stomp")
+                                
+                                -- Go back to original position
+                                localPlayer.Character.HumanoidRootPart.CFrame = savedPosition
+                                task.wait(0.5)
+                                
+                                -- Verify if target is really stomped
+                                local bodyEffects = Target.Character:FindFirstChild("BodyEffects")
+                                local currentHealth = 0
+                                local isDead = false
+                                
+                                if bodyEffects then
+                                    local healthEffect = bodyEffects:FindFirstChild("Health")
+                                    if healthEffect then
+                                        currentHealth = healthEffect.Value
+                                    end
+                                    
+                                    local deathEffect = bodyEffects:FindFirstChild("SDeath")
+                                    if deathEffect then
+                                        isDead = deathEffect.Value
+                                    end
+                                end
+                                
+                                local healthDiff = originalHealth - currentHealth
+                                
+                                if isDead then
+                                    api:notify('Target killed by stomp!', 3)
+                                elseif healthDiff > 1.0 then
+                                    api:notify('Stomp hit!', 3)
+                                else
+                                    -- If missed, tp to target and stomp again
+                                    api:notify('Stomp might have missed, trying again...', 2)
+                                    
+                                    localPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(Target.Character.UpperTorso.Position + Vector3.new(0, 3, 0))
+                                    task.wait(0.3)
+                                    
+                                    MainEvent:FireServer("Stomp")
+                                    api:notify('Second stomp fired', 2)
+                                    
+                                    task.wait(0.3)
+                                    localPlayer.Character.HumanoidRootPart.CFrame = savedPosition
+                                end
+                            else
+                                api:notify('MainEvent not found!', 3)
+                                localPlayer.Character.HumanoidRootPart.CFrame = savedPosition
+                            end
+                        end
+                    else
+                        api:notify('Target is dead, cannot stomp', 3)
+                    end
+                else
+                    local originalCFrame = localPlayer.Character:FindFirstChild("HumanoidRootPart").CFrame
+                    local humanoidRootPart = localPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    local Tool = localPlayer.Character:FindFirstChildOfClass("Tool")
+                    
+                    if humanoidRootPart and Tool and Tool:FindFirstChild("Handle") then
+                        local targetHRP = Target.Character:FindFirstChild("HumanoidRootPart")
+                        local targetHead = Target.Character:FindFirstChild("Head")
+                        
+                        if targetHead and targetHRP then
+                            if hasForcefield(Target) then
+                                api:notify(selectedPlayer .. " is in an active protective barrier. Waiting...", 10)
+                                
+                                task.spawn(function()
+                                    while hasForcefield(Target) and Target and Target.Character do
+                                        if not game.Players:FindFirstChild(selectedPlayer) then
+                                            api:notify(selectedPlayer .. " left the game", 5)
+                                            updatePlayerDropdown()
+                                            return
+                                        end
+                                        task.wait(0.1)
+                                    end
+                                    
+                                    if Target and Target.Character and proceedWithStomp then
+                                        pcall(function()
+                                            proceedWithStomp(Target, selectedPlayer, localPlayer, humanoidRootPart, originalCFrame)
+                                        end)
+                                    end
+                                end)
+                            else
+                                if proceedWithStomp then
+                                    pcall(function()
+                                        proceedWithStomp(Target, selectedPlayer, localPlayer, humanoidRootPart, originalCFrame)
+                                    end)
+                                end
+                            end
+                        end
+                    else
+                        api:notify('Please equip your gun before using Stomp', 3)
+                    end
+                end
+            else
+                api:notify('Target player not found or not loaded', 3)
+            end
+        else
+            api:notify('No player selected for stomp', 3)
+        end
+    end,
+    DoubleClick = false,
+})
+
+local function proceedWithBring(Target, selectedPlayer, localPlayer, humanoidRootPart, originalCFrame)
+    local targetHRP = Target.Character:FindFirstChild("HumanoidRootPart")
+    local targetHead = Target.Character:FindFirstChild("Head")
+    
+    if targetHead and targetHRP then
+        enableStickySilentAim(Target)
+        
+        local targetHeadPos = targetHead.Position
+        local stickToHeadPos = Vector3.new(targetHeadPos.X, targetHeadPos.Y + 5, targetHeadPos.Z)
+        humanoidRootPart.CFrame = CFrame.new(stickToHeadPos)
+        
+        task.spawn(function()
+            while Target and Target.Character and not KnockCheck(Target) do
+                if not game.Players:FindFirstChild(selectedPlayer) then
+                    api:notify(selectedPlayer .. " left the game", 5)
+                    updatePlayerDropdown()
+                    disableStickySilentAim()
+                    return
+                end
+                
+                if not localPlayer.Character or not localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    break
+                end
+                
+                local currentTool = localPlayer.Character:FindFirstChildOfClass("Tool")
+                if not currentTool or not currentTool:FindFirstChild("Handle") then
+                    break
+                end
+                
+                local currentTargetHRP = Target.Character:FindFirstChild("HumanoidRootPart")
+                local currentTargetHead = Target.Character:FindFirstChild("Head")
+                
+                if currentTargetHRP and currentTargetHead then
+                    local targetHeadPos = currentTargetHead.Position
+                    local stickToHeadPos = Vector3.new(targetHeadPos.X, targetHeadPos.Y + 5, targetHeadPos.Z)
+                    
+                    humanoidRootPart.CFrame = CFrame.new(stickToHeadPos)
+                    humanoidRootPart.Position = stickToHeadPos
+                    
+                    if hasForcefield(Target) then
+                        task.wait(0.1)
+                    else
+                        for i = 1, 3 do
+                            if Target and Target.Character and not KnockCheck(Target) and not hasForcefield(Target) then
+                                humanoidRootPart.CFrame = CFrame.new(stickToHeadPos)
+                                humanoidRootPart.Position = stickToHeadPos
+                                
+                                stickyAimActive = true
+                                MainEvent:FireServer("ShootGun", currentTool.Handle, currentTool.Handle.Position, currentTargetHead.Position, currentTargetHead, Vector3.new(0, 1, 0))
+                                task.wait(0.01)
+                                stickyAimActive = false
+                                task.wait(0.05)
                             else
                                 if hasForcefield(Target) then
-                                    print('Forcefield detected during shooting, stopping shots but staying stuck')
                                 end
                                 break
                             end
                         end
                     end
                 else
-                    print('Target lost, stopping bring sequence')
                     break
                 end
                 
-                task.wait(0.01) -- Very short wait for maximum sticking performance
+                task.wait(0.01)
             end
             
-            -- Check if target was successfully knocked
             if Target and Target.Character and KnockCheck(Target) then
-                print('Successfully knocked player:', selectedPlayer, '- Staying frozen on head while they ragdoll...')
-                
-                -- Stay frozen on the target's head and pick up once
                 local originalHeadPos = Target.Character.Head.Position
                 local pickupAttempted = false
                 
-                -- Wait briefly for ragdoll to settle
-                print('Waiting for ragdoll to settle before pickup...')
-                task.wait(0.5) -- Reduced from 2 to 0.5 seconds
+                task.wait(0.5)
                 
-                -- Go to the current head position and pick up once
                 if Target.Character and Target.Character:FindFirstChild("Head") then
                     local currentHeadPos = Target.Character.Head.Position
                     local stickToHeadPos = Vector3.new(currentHeadPos.X, currentHeadPos.Y + 5, currentHeadPos.Z)
                     
-                    -- Stay frozen on head
                     humanoidRootPart.CFrame = CFrame.new(stickToHeadPos)
                     humanoidRootPart.Position = stickToHeadPos
                     
-                    print('Positioned on ragdolled head, attempting fast pickup...')
-                    
-                    -- Press G once to pick up
                     local VirtualInputManager = game:GetService("VirtualInputManager")
                     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.G, false, game)
-                    task.wait(0.05) -- Reduced from 0.1 to 0.05
+                    task.wait(0.05)
                     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.G, false, game)
-                    print('Pressed G once to pick up body')
                     
                     pickupAttempted = true
                     
-                    -- Wait briefly for pickup animation
-                    task.wait(0.5) -- Reduced from 1.5 to 0.5 seconds
-                    
-                    print('Pickup attempted, teleporting back quickly...')
+                    task.wait(0.5)
                 end
                 
-                -- Always teleport back to original position
                 if localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
                     localPlayer.Character.HumanoidRootPart.CFrame = originalCFrame
-                    print('Teleported back to original position')
                 end
             else
-                print('Failed to knock player or target left:', selectedPlayer)
-                -- Return to original position if knock failed
                 if localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
                     localPlayer.Character.HumanoidRootPart.CFrame = originalCFrame
-                    print('Returned to original position (knock failed)')
                 end
             end
             
-            -- Disable sticky silent aim
             disableStickySilentAim()
         end)
     end
 end
 
-local stompSubButton = testButton:AddButton({
+local stompSubButton = stompButton:AddButton({
     Text = 'Bring',
     Func = function()
         local selectedPlayer = playerDropdown.Value
@@ -2073,45 +2192,29 @@ local stompSubButton = testButton:AddButton({
                     local targetHead = Target.Character:FindFirstChild("Head")
                     
                     if targetHead and targetHRP then
-                        print('Starting bring sequence for:', selectedPlayer)
-                        
-                        -- Check if target has forcefield before starting
                         if hasForcefield(Target) then
-                            -- Use api:notify for forcefield notification
                             api:notify(selectedPlayer .. " is in an active protective barrier. Waiting...", 10)
                             
-                            -- Wait for forcefield to end
                             task.spawn(function()
                                 while hasForcefield(Target) and Target and Target.Character do
-                                    -- Check if target left the game
                                     if not game.Players:FindFirstChild(selectedPlayer) then
                                         api:notify(selectedPlayer .. " left the game", 5)
-                                        updatePlayerDropdown() -- Refresh player list
-                                        return -- Exit the function
+                                        updatePlayerDropdown()
+                                        return
                                     end
                                     task.wait(0.1)
                                 end
                                 
-                                -- Now proceed with the bring sequence
                                 if Target and Target.Character then
                                     proceedWithBring(Target, selectedPlayer, localPlayer, humanoidRootPart, originalCFrame)
                                 end
                             end)
                         else
-                            -- No forcefield, proceed immediately
                             proceedWithBring(Target, selectedPlayer, localPlayer, humanoidRootPart, originalCFrame)
                         end
-                    else
-                        print('Target missing head or rootpart')
                     end
-                else
-                    print('Please equip your gun before using Bring')
                 end
-            else
-                print('Target player not found or not loaded:', selectedPlayer)
             end
-        else
-            print('No player selected for bring')
         end
     end,
     DoubleClick = false,
