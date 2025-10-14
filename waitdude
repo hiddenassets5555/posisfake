@@ -6,7 +6,7 @@ getgenv().wanderkiddfakepos_loaded = true
 local api = getfenv().api or {}
 
 local tabs = getgenv().wanderkidd_tabs or {
-    lua = api:AddTab('$SUDOAPI'),
+    lua = api:AddTab('$API'),
 }
 getgenv().wanderkidd_tabs = tabs
 
@@ -113,18 +113,24 @@ end
 
 local TabBox = tabs.lua:AddRightTabbox()
 
-local Tab1 = TabBox:AddTab('Misc')
-local Tab2 = TabBox:AddTab('Farm')
+local Tab1 = TabBox:AddTab('Misc01')
+local Tab2 = TabBox:AddTab('Misc02')
+local Tab3 = TabBox:AddTab('Farm')
 
-getgenv().AntiRPGDesyncEnabled = false
-getgenv().AntiRPGDesyncLoop = nil
+-- RPG Detection
+getgenv().AntiRPGEnabled = false
+getgenv().AntiRPGLoop = nil
+
+-- Grenade Detection  
+getgenv().AntiGrenadeEnabled = false
+getgenv().AntiGrenadeLoop = nil
 
 local RunService = game:GetService('RunService')
 local Workspace = game:GetService('Workspace')
 local LocalPlayer = game.Players.LocalPlayer
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 
-local function IsThreatNear()
+local function IsRPGNear()
     local Ignored = Workspace:FindFirstChild('Ignored')
     if not Ignored then
         return false
@@ -136,18 +142,31 @@ local function IsThreatNear()
     end
     local RPG = Ignored:FindFirstChild('Model')
         and Ignored.Model:FindFirstChild('Launcher')
+    return RPG ~= nil
+end
+
+local function IsGrenadeNear()
+    local Ignored = Workspace:FindFirstChild('Ignored')
+    if not Ignored then
+        return false
+    end
+    local HRP = LocalPlayer.Character
+        and LocalPlayer.Character:FindFirstChild('HumanoidRootPart')
+    if not HRP then
+        return false
+    end
     local Grenade = Ignored:FindFirstChild('Handle')
     local grenadeNear = Grenade
         and (Grenade.Position - HRP.Position).Magnitude < 16
-    return RPG or grenadeNear
+    return grenadeNear
 end
 
-local function StartThreatDetection()
-    if getgenv().AntiRPGDesyncLoop then
+local function StartRPGDetection()
+    if getgenv().AntiRPGLoop then
         return
     end
-    getgenv().AntiRPGDesyncLoop = RunService.PostSimulation:Connect(function()
-        if not getgenv().AntiRPGDesyncEnabled then
+    getgenv().AntiRPGLoop = RunService.PostSimulation:Connect(function()
+        if not getgenv().AntiRPGEnabled then
             return
         end
         local Character = LocalPlayer.Character
@@ -156,7 +175,7 @@ local function StartThreatDetection()
         if not HRP or not Humanoid then
             return
         end
-        if IsThreatNear() then
+        if IsRPGNear() then
             local Offset = Vector3.new(
                 math.random(-100, 100),
                 math.random(50, 150),
@@ -171,28 +190,83 @@ local function StartThreatDetection()
     end)
     LocalPlayer.CharacterAdded:Connect(function()
         task.wait(1)
-        if getgenv().AntiRPGDesyncEnabled then
-            StartThreatDetection()
+        if getgenv().AntiRPGEnabled then
+            StartRPGDetection()
         end
     end)
 end
 
-local function StopThreatDetection()
-    if getgenv().AntiRPGDesyncLoop then
-        getgenv().AntiRPGDesyncLoop:Disconnect()
-        getgenv().AntiRPGDesyncLoop = nil
+local function StopRPGDetection()
+    if getgenv().AntiRPGLoop then
+        getgenv().AntiRPGLoop:Disconnect()
+        getgenv().AntiRPGLoop = nil
     end
 end
 
-Tab1:AddToggle('CombinedThreatDetection', {
-    Text = 'RPG + Grenade Detection',
+local function StartGrenadeDetection()
+    if getgenv().AntiGrenadeLoop then
+        return
+    end
+    getgenv().AntiGrenadeLoop = RunService.PostSimulation:Connect(function()
+        if not getgenv().AntiGrenadeEnabled then
+            return
+        end
+        local Character = LocalPlayer.Character
+        local HRP = Character and Character:FindFirstChild('HumanoidRootPart')
+        local Humanoid = Character and Character:FindFirstChild('Humanoid')
+        if not HRP or not Humanoid then
+            return
+        end
+        if IsGrenadeNear() then
+            local Offset = Vector3.new(
+                math.random(-100, 100),
+                math.random(50, 150),
+                math.random(-100, 100)
+            )
+            Humanoid.CameraOffset = -Offset
+            local OldCFrame = HRP.CFrame
+            HRP.CFrame = CFrame.new(HRP.Position + Offset)
+            RunService.RenderStepped:Wait()
+            HRP.CFrame = OldCFrame
+        end
+    end)
+    LocalPlayer.CharacterAdded:Connect(function()
+        task.wait(1)
+        if getgenv().AntiGrenadeEnabled then
+            StartGrenadeDetection()
+        end
+    end)
+end
+
+local function StopGrenadeDetection()
+    if getgenv().AntiGrenadeLoop then
+        getgenv().AntiGrenadeLoop:Disconnect()
+        getgenv().AntiGrenadeLoop = nil
+    end
+end
+
+Tab1:AddToggle('RPGDetection', {
+    Text = 'RPG Detection',
     Default = false,
     Callback = function(state)
-        getgenv().AntiRPGDesyncEnabled = state
+        getgenv().AntiRPGEnabled = state
         if state then
-            StartThreatDetection()
+            StartRPGDetection()
         else
-            StopThreatDetection()
+            StopRPGDetection()
+        end
+    end,
+})
+
+Tab1:AddToggle('GrenadeDetection', {
+    Text = 'Grenade Detection',
+    Default = false,
+    Callback = function(state)
+        getgenv().AntiGrenadeEnabled = state
+        if state then
+            StartGrenadeDetection()
+        else
+            StopGrenadeDetection()
         end
     end,
 })
@@ -412,6 +486,119 @@ Tab1:AddToggle('AntiFlingToggle', {
             end
         end
     end,
+})
+
+-- Misc02 Tab Content
+local function findKeyButton()
+    local shopFolder = workspace:FindFirstChild('Ignored')
+    if shopFolder then
+        local shop = shopFolder:FindFirstChild('Shop')
+        if shop then
+            for _, item in pairs(shop:GetChildren()) do
+                -- More specific check: must contain [Key] and $137, but NOT LockPicker
+                local itemName = item.Name:lower()
+                if itemName:find('%[key%]') and itemName:find('$137') and not itemName:find('lockpicker') then
+                    return item
+                end
+            end
+        end
+    end
+    return nil
+end
+
+local function equipKey()
+    local localPlayer = game.Players.LocalPlayer
+    local character = localPlayer.Character
+    local backpack = localPlayer:FindFirstChild('Backpack')
+    
+    if not character or not backpack then
+        return nil
+    end
+    
+    -- Look for key in backpack
+    local key = backpack:FindFirstChild('[Key]')
+    if not key then
+        return nil
+    end
+    
+    -- Equip the key
+    local humanoid = character:FindFirstChild('Humanoid')
+    if humanoid then
+        humanoid:EquipTool(key)
+        task.wait(0.1) -- Wait for equip to complete
+        return key
+    end
+    
+    return nil
+end
+
+local function useKey(key)
+    if key and key:IsA('Tool') then
+        key:Activate()
+        task.wait(0.1)
+        return true
+    end
+    return false
+end
+
+local function teleportToUnjailPositionAndBuyKey()
+    local localPlayer = game.Players.LocalPlayer
+    if not localPlayer.Character or not localPlayer.Character:FindFirstChild('HumanoidRootPart') then
+        api:notify('Character not found!', 3)
+        return
+    end
+    
+    -- Save original position
+    local originalPosition = localPlayer.Character.HumanoidRootPart.CFrame
+    
+    -- Teleport to the specified unjail position
+    local unjailPosition = Vector3.new(-270.74212646484375, 21.74802017211914, -241.5172119140625)
+    localPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(unjailPosition)
+    
+    -- Wait a moment for teleport to complete
+    task.wait(0.5)
+    
+    -- Find and buy the key
+    local keyButton = findKeyButton()
+    if keyButton then
+        -- Find and click the key button
+        local clickDetector = keyButton:FindFirstChild('ClickDetector') or keyButton:FindFirstChildWhichIsA('ClickDetector', true)
+        if clickDetector then
+            fireclickdetector(clickDetector)
+            api:notify('Key purchased! Equipping and using...', 3)
+            
+            -- Wait for key to appear in backpack
+            task.wait(1)
+            
+            -- Equip the key
+            local key = equipKey()
+            if key then
+                api:notify('Key equipped! Using key...', 2)
+                
+                -- Use the key
+                if useKey(key) then
+                    api:notify('Unjail complete! Key used successfully!', 3)
+                else
+                    api:notify('Key equipped but failed to use!', 3)
+                end
+            else
+                api:notify('Key purchased but failed to equip!', 3)
+            end
+        else
+            api:notify('Teleported but could not find ClickDetector!', 3)
+        end
+    else
+        api:notify('Teleported but key button not found!', 3)
+    end
+end
+
+Tab2:AddButton({
+    Text = 'Unjail',
+    Func = function()
+        teleportToUnjailPositionAndBuyKey()
+    end,
+    DoubleClick = false,
+    Tooltip = 'Teleport to unjail position and buy key',
 })
 
 local Players = game:GetService('Players')
@@ -774,7 +961,7 @@ function stopFarming()
 end
 
 
-Tab2:AddToggle('cashatmfarm', {
+Tab3:AddToggle('cashatmfarm', {
     Text = 'ATM Farm',
     Default = false,
     Callback = function(Value)
@@ -902,7 +1089,7 @@ end
 
 LocalPlayer.CharacterAdded:Connect(OnCharacterAdded)
 
-Tab2:AddToggle('AutoStompFarm', {
+Tab3:AddToggle('AutoStompFarm', {
     Text = 'Stomp Farm',
     Default = false,
     Callback = function(Value)
@@ -1084,7 +1271,7 @@ do
         end)
     end
 
-    Tab2:AddToggle('BoxingFarm', {
+    Tab3:AddToggle('BoxingFarm', {
         Text = 'Boxing Farm',
         Default = false,
         Callback = function(value)
@@ -1095,7 +1282,7 @@ end
 
 local originalLettucePosition = nil
 
-Tab2:AddToggle('lettuceToggle', {
+Tab3:AddToggle('lettuceToggle', {
     Text = 'Auto Lettuce',
     Default = false,
     Callback = function(value)
@@ -1183,7 +1370,7 @@ end)
 
 local toggleName = 'HeavyWeightsAuto'
 
-Tab2:AddToggle(toggleName, {
+Tab3:AddToggle(toggleName, {
     Text = 'Auto Weights',
     Default = false,
 })
