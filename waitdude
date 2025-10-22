@@ -4,6 +4,123 @@ end
 getgenv().wanderkiddfakepos_loaded = true
 
 local api = getfenv().api or {}
+local M = {}
+
+-- Skyboxes data from skyboxes.lua
+local skyBoxes = {
+	["purple clouds"] = {
+		SkyboxLf = "rbxassetid://151165191",
+		SkyboxBk = "rbxassetid://151165214",
+		SkyboxDn = "rbxassetid://151165197",
+		SkyboxFt = "rbxassetid://151165224",
+		SkyboxRt = "rbxassetid://151165206",
+		SkyboxUp = "rbxassetid://151165227",
+	},
+	["cloudy skies"] = {
+		SkyboxLf = "rbxassetid://151165191",
+		SkyboxBk = "rbxassetid://151165214",
+		SkyboxDn = "rbxassetid://151165197",
+		SkyboxFt = "rbxassetid://151165224",
+		SkyboxRt = "rbxassetid://151165206",
+		SkyboxUp = "rbxassetid://151165227",
+	},
+	["purple nebula"] = {
+		SkyboxLf = "rbxassetid://159454286",
+		SkyboxBk = "rbxassetid://159454299",
+		SkyboxDn = "rbxassetid://159454296",
+		SkyboxFt = "rbxassetid://159454293",
+		SkyboxRt = "rbxassetid://159454300",
+		SkyboxUp = "rbxassetid://159454288",
+	},
+	["purple and blue"] = {
+		SkyboxLf = "rbxassetid://149397684",
+		SkyboxBk = "rbxassetid://149397692",
+		SkyboxDn = "rbxassetid://149397686",
+		SkyboxFt = "rbxassetid://149397697",
+		SkyboxRt = "rbxassetid://149397688",
+		SkyboxUp = "rbxassetid://149397702",
+	},
+	["twighlight"] = {
+		SkyboxLf = "rbxassetid://264909758",
+		SkyboxBk = "rbxassetid://264908339",
+		SkyboxDn = "rbxassetid://264907909",
+		SkyboxFt = "rbxassetid://264909420",
+		SkyboxRt = "rbxassetid://264908886",
+		SkyboxUp = "rbxassetid://264907379",
+	},
+	["vaporwave"] = {
+		SkyboxLf = "rbxassetid://1417494402",
+		SkyboxBk = "rbxassetid://1417494030",
+		SkyboxDn = "rbxassetid://1417494146",
+		SkyboxFt = "rbxassetid://1417494253",
+		SkyboxLf = "rbxassetid://1417494402",
+		SkyboxRt = "rbxassetid://1417494499",
+		SkyboxUp = "rbxassetid://1417494643",
+	},
+	["clouds"] = {
+		SkyboxLf = "rbxassetid://570557620",
+		SkyboxBk = "rbxassetid://570557514",
+		SkyboxDn = "rbxassetid://570557775",
+		SkyboxFt = "rbxassetid://570557559",
+		SkyboxLf = "rbxassetid://570557620",
+		SkyboxRt = "rbxassetid://570557672",
+		SkyboxUp = "rbxassetid://570557727",
+	},
+	["setting sun"] = {
+		SkyboxBk = "rbxassetid://626460377",
+		SkyboxDn = "rbxassetid://626460216",
+		SkyboxFt = "rbxassetid://626460513",
+		SkyboxLf = "rbxassetid://626473032",
+		SkyboxRt = "rbxassetid://626458639",
+		SkyboxUp = "rbxassetid://626460625"
+	},
+	["fade blue"] = {
+		SkyboxBk = "rbxassetid://153695414",
+		SkyboxDn = "rbxassetid://153695352",
+		SkyboxFt = "rbxassetid://153695452",
+		SkyboxLf = "rbxassetid://153695320",
+		SkyboxRt = "rbxassetid://153695383",
+		SkyboxUp = "rbxassetid://153695471"
+	},
+	["elegant morning"] = {
+		SkyboxBk = "rbxassetid://153767241",
+		SkyboxDn = "rbxassetid://153767216",
+		SkyboxFt = "rbxassetid://153767266",
+		SkyboxLf = "rbxassetid://153767200",
+		SkyboxRt = "rbxassetid://153767231",
+		SkyboxUp = "rbxassetid://153767288"
+	},
+	["neptune"] = {
+		SkyboxBk = "rbxassetid://218955819",
+		SkyboxDn = "rbxassetid://218953419",
+		SkyboxFt = "rbxassetid://218954524",
+		SkyboxLf = "rbxassetid://218958493",
+		SkyboxRt = "rbxassetid://218957134",
+		SkyboxUp = "rbxassetid://218950090"
+	},
+	["redshift"] = {
+		SkyboxBk = "rbxassetid://401664839",
+		SkyboxDn = "rbxassetid://401664862",
+		SkyboxFt = "rbxassetid://401664960",
+		SkyboxLf = "rbxassetid://401664881",
+		SkyboxRt = "rbxassetid://401664901",
+		SkyboxUp = "rbxassetid://401664936"
+	},
+	["aesthetic night"] = {
+		SkyboxBk = "rbxassetid://1045964490",
+		SkyboxDn = "rbxassetid://1045964368",
+		SkyboxFt = "rbxassetid://1045964655",
+		SkyboxLf = "rbxassetid://1045964655",
+		SkyboxRt = "rbxassetid://1045964655",
+		SkyboxUp = "rbxassetid://1045962969"
+	}
+}
+
+-- Create dropdown values array
+local skyboxDropDown = {}
+for i, v in next, (skyBoxes) do
+	skyboxDropDown[1 + #skyboxDropDown] = i
+end
 
 local tabs = getgenv().wanderkidd_tabs or {
     lua = api:AddTab('$API'),
@@ -16,17 +133,79 @@ local settingsTabBox = tabs.lua:AddRightTabbox()
 
 local infoTab = settingsTabBox:AddTab('Info')
 infoTab:AddLabel(
-    'Note: Fake Pos will only work on the normal version of Unamed Enhancements and not the beta version.',
+    'Note: The secret is not to find the meaning of life, but to use your life to make things that are meaningful.',
     true
 )
 
 local settingsTab = settingsTabBox:AddTab('Settings')
-settingsTab:AddButton({
-    Text = 'Rejoin',
-    Func = function()
-        game:GetService("TeleportService"):Teleport(game.PlaceId, game:GetService("Players").LocalPlayer)
+
+-- Skyboxes functionality
+local skyboxesEnabled = false
+local currentSkybox = "elegant morning"
+
+-- Function to apply skybox
+local function applySkybox(skyboxName)
+    local skyboxData = skyBoxes[skyboxName]
+    if not skyboxData then 
+        return 
+    end
+    
+    local lighting = game:GetService("Lighting")
+    
+    -- Get or create Sky object
+    local skyObject = lighting:FindFirstChild("Sky")
+    if not skyObject then
+        skyObject = Instance.new("Sky")
+        skyObject.Parent = lighting
+    end
+    
+    -- Apply skybox textures
+    skyObject.SkyboxLf = skyboxData.SkyboxLf
+    skyObject.SkyboxBk = skyboxData.SkyboxBk
+    skyObject.SkyboxDn = skyboxData.SkyboxDn
+    skyObject.SkyboxFt = skyboxData.SkyboxFt
+    skyObject.SkyboxRt = skyboxData.SkyboxRt
+    skyObject.SkyboxUp = skyboxData.SkyboxUp
+end
+
+-- Skyboxes checkbox
+local skyboxesToggle = settingsTab:AddToggle('skyboxes_enabled', {
+    Text = 'Skyboxes',
+    Default = false,
+    Callback = function(value)
+        skyboxesEnabled = value
+        if value then
+            applySkybox(currentSkybox)
+        else
+            -- Reset to original game skybox when disabled
+            local lighting = game:GetService("Lighting")
+            
+            -- Remove the Sky object completely to restore original game skybox
+            local skyObject = lighting:FindFirstChild("Sky")
+            if skyObject then
+                skyObject:Destroy()
+            end
+        end
     end,
-    DoubleClick = false,
+})
+
+-- Create dependency box for skyboxes dropdown
+local skyboxesDepbox = settingsTab:AddDependencyBox()
+
+-- Skyboxes dropdown (only visible when checkbox is enabled)
+skyboxesDepbox:AddDropdown('skybox_selection', {
+    Text = 'Skybox Selection',
+    Default = 'elegant morning',
+    Values = skyboxDropDown,
+    Callback = function(value)
+        currentSkybox = value
+        applySkybox(value)
+    end,
+})
+
+-- Setup dependency - dropdown only shows when checkbox is enabled
+skyboxesDepbox:SetupDependencies({
+    { skyboxesToggle, true }
 })
 
 
@@ -36,55 +215,181 @@ local wanderkiddfakepos = getgenv().wanderkiddfakepos
 wanderkiddfakepos.Network = wanderkiddfakepos.Network
     or {
         FakePos = false,
+        Desync = false,
+        UseSenderRate = true,
+        SenderRate = 1,
+        RefreshRate = 0.1,
     }
 
 local framework = {}
 framework.keybindPressed = false
 
+-- Enhanced fake position implementation - Server-side freeze with local movement
+local RunService = game:GetService("RunService")
+local LocalPlayer = game:GetService("Players").LocalPlayer
+local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local a = false
+local serverFrozenPosition = nil
+local isServerFrozen = false
+local originalNetworkOwner = nil
+
+-- Store server position when fake pos is enabled
+local function storeServerPosition()
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        serverFrozenPosition = LocalPlayer.Character.HumanoidRootPart.CFrame
+    end
+end
+
+-- Enhanced network manipulation for server-side only freezing
 if not wanderkiddfakepos._connection then
-    wanderkiddfakepos._connection = game:GetService('RunService').Heartbeat
-        :Connect(function()
-            if wanderkiddfakepos.Network.FakePos then
+    wanderkiddfakepos._connection = RunService.Heartbeat:Connect(function()
+        if wanderkiddfakepos.Network.Desync and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local hrp = LocalPlayer.Character.HumanoidRootPart
+            
+            -- Store server position on first activation
+            if not isServerFrozen then
+                storeServerPosition()
+                isServerFrozen = true
+                -- Store original network owner
+                originalNetworkOwner = hrp:GetNetworkOwner()
+            end
+            
+            -- Aggressive network manipulation for server-side freezing
+            sethiddenproperty(hrp, "NetworkIsSleeping", true)
+            
+            -- Manipulate network ownership to control server position
+            if hrp:GetNetworkOwner() == LocalPlayer then
+                hrp:SetNetworkOwner(nil) -- Remove network ownership
+            end
+            
+            -- Send fake position to server (this is what other players see)
+            if serverFrozenPosition then
+                -- Use remote events or direct network manipulation
+                pcall(function()
+                    -- Force server to see frozen position
+                    hrp.CFrame = serverFrozenPosition
+                    hrp.Velocity = Vector3.new(0, 0, 0)
+                    hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                    hrp.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                end)
+            end
+            
+            -- Aggressive physics rate manipulation for server desync
+            if wanderkiddfakepos.Network.UseSenderRate then
+                setfflag("S2PhysicsSenderRate", "0.01")
+                setfflag("S2PhysicsReceiverRate", "0.01")
+            end
+        else
+            -- Reset when disabled
+            if isServerFrozen then
+                isServerFrozen = false
+                serverFrozenPosition = nil
+                -- Restore network ownership
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local hrp = LocalPlayer.Character.HumanoidRootPart
+                    if originalNetworkOwner then
+                        hrp:SetNetworkOwner(originalNetworkOwner)
+                    end
+                end
+            end
+        end
+    end)
+end
+
+-- Local movement connection - allows free movement on client while server is frozen
+if not wanderkiddfakepos._localConnection then
+    wanderkiddfakepos._localConnection = RunService.Heartbeat:Connect(function()
+        if wanderkiddfakepos.Network.Desync and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local hrp = LocalPlayer.Character.HumanoidRootPart
+            
+            -- Allow local movement by temporarily restoring network ownership
+            if hrp:GetNetworkOwner() ~= LocalPlayer then
+                hrp:SetNetworkOwner(LocalPlayer)
+            end
+            
+            -- Immediately remove network ownership after setting position to prevent server sync
+            task.defer(function()
+                if hrp:GetNetworkOwner() == LocalPlayer then
+                    hrp:SetNetworkOwner(nil)
+                end
+            end)
+        end
+    end)
+end
+
+-- Enhanced coroutine for network manipulation
+if not wanderkiddfakepos._coroutine then
+    wanderkiddfakepos._coroutine = coroutine.wrap(function()
+        while true do
+            if wanderkiddfakepos.Network.Desync then
+                -- Aggressive network manipulation for server desync
+                setfflag("S2PhysicsSenderRate", "0.001")
+                setfflag("S2PhysicsReceiverRate", "0.001")
+                
+                -- Additional network flags for better desync
+                setfflag("S2PhysicsSenderRate", "0.01")
+                task.defer(function()
+                    setfflag("S2PhysicsSenderRate", "0.1")
+                    setfflag("S2PhysicsReceiverRate", "0.1")
+                end)
+                
+                -- Force server position update
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and serverFrozenPosition then
+                    local hrp = LocalPlayer.Character.HumanoidRootPart
+                    -- Send frozen position to server
+                    hrp:SetNetworkOwner(nil)
+                    hrp.CFrame = serverFrozenPosition
+                    hrp.Velocity = Vector3.new(0, 0, 0)
+                    hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                    hrp.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                end
+            end
+            task.wait(0.001) -- Ultra-fast refresh rate for better desync
+        end
+    end)
+    wanderkiddfakepos._coroutine()
+end
+
+if not wanderkiddfakepos._toggleCreated then
+    networkSection:AddLabel("Fake Position")
+    local fakeposToggle = networkSection:AddToggle('fakepos_enabled', {
+        Text = 'Fake Pos',
+        Default = wanderkiddfakepos.Network.Desync,
+        Callback = function(value)
+            wanderkiddfakepos.Network.Desync = value
+            wanderkiddfakepos.Network.FakePos = value
+            if value then
+                -- Enhanced activation - store server position for freezing
+                storeServerPosition()
+                setfflag("S2PhysicsSenderRate", "0.001")
+                setfflag("S2PhysicsReceiverRate", "0.001")
+                task.defer(function()
+                    setfflag("S2PhysicsSenderRate", "0.1")
+                    setfflag("S2PhysicsReceiverRate", "0.1")
+                end)
+            else
+                -- Enhanced deactivation and reset
+                isServerFrozen = false
+                serverFrozenPosition = nil
                 pcall(function()
                     local character = game.Players.LocalPlayer.Character
                     if character and character:FindFirstChild('HumanoidRootPart') then
                         local hrp = character.HumanoidRootPart
-                        
-                        if wanderkiddfakepos._toggleState then
-                            sethiddenproperty(hrp, 'NetworkIsSleeping', true)
-                        else
-                            sethiddenproperty(hrp, 'NetworkIsSleeping', false)
+                        sethiddenproperty(hrp, 'NetworkIsSleeping', false)
+                        -- Restore network ownership
+                        if originalNetworkOwner then
+                            hrp:SetNetworkOwner(originalNetworkOwner)
                         end
-                        wanderkiddfakepos._toggleState = not wanderkiddfakepos._toggleState
+                        -- Reset velocities
+                        hrp.Velocity = Vector3.new(0, 0, 0)
+                        hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                        hrp.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
                     end
                 end)
-            end
-        end)
-end
-
-if not wanderkiddfakepos._toggleCreated then
-    local fakeposToggle = networkSection:AddToggle('fakepos_enabled', {
-        Text = 'Fake Pos',
-        Default = wanderkiddfakepos.Network.FakePos,
-        Callback = function(value)
-            wanderkiddfakepos.Network.FakePos = value
-            if value then
-                wanderkiddfakepos._toggleState = true
-                setfflag('S2PhysicsSenderRate', '1')
-                setfpscap(1)
-                task.wait(0.1)
-                setfflag('S2PhysicsSenderRate', '20000')
-                setfpscap(240)
-            else
-                setfflag('S2PhysicsSenderRate', '20000')
-                setfpscap(240)
-                wanderkiddfakepos._toggleState = nil
-                pcall(function()
-                    local character = game.Players.LocalPlayer.Character
-                    if character and character:FindFirstChild('HumanoidRootPart') then
-                        sethiddenproperty(character.HumanoidRootPart, 'NetworkIsSleeping', false)
-                    end
-                end)
+                -- Reset network flags to normal
+                setfflag("S2PhysicsSenderRate", "20")
+                setfflag("S2PhysicsReceiverRate", "20")
             end
         end,
     })
@@ -271,14 +576,19 @@ Tab1:AddToggle('GrenadeDetection', {
     end,
 })
 
+
 local CASH_AURA_ENABLED = false
-local COOLDOWN = 0.2
-local CASH_AURA_RANGE = 17
+local CASH_AURA_SPEED = 5
+local CASH_AURA_RANGE = 10
+local _CASH_AURA_LAST_CLICK = {}
+local CASH_AURA_HUMANIZE = false
 
 local function GetCash()
     local Found = {}
     local Drop = workspace:FindFirstChild('Ignored')
         and workspace.Ignored:FindFirstChild('Drop')
+
+    local effectiveRange = CASH_AURA_HUMANIZE and 14 or CASH_AURA_RANGE
 
     if Drop then
         for _, v in pairs(Drop:GetChildren()) do
@@ -294,7 +604,7 @@ local function GetCash()
                             Pos
                             - game.Players.LocalPlayer.Character.HumanoidRootPart.Position
                         ).Magnitude
-                        <= CASH_AURA_RANGE
+                        <= effectiveRange
                 then
                     table.insert(Found, v)
                 end
@@ -308,27 +618,303 @@ end
 local function CashAura()
     while CASH_AURA_ENABLED do
         local Cash = GetCash()
+        local now = tick()
+        local cooldown = CASH_AURA_HUMANIZE and (math.random(20, 50) / 100) or math.max(0.02, 1 / math.max(1, CASH_AURA_SPEED))
 
-        for _, v in pairs(Cash) do
-            local clickDetector = v:FindFirstChildOfClass('ClickDetector')
-            if clickDetector then
-                pcall(function()
-                    fireclickdetector(clickDetector)
-                end)
+        if CASH_AURA_HUMANIZE then
+            -- Occasionally skip to mimic human hesitation
+            if math.random() < 0.1 then
+                task.wait(cooldown)
+            else
+                -- Click at most one: the nearest drop
+                local nearest, nearestDist
+                local hrp = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild('HumanoidRootPart')
+                for _, v in pairs(Cash) do
+                    if hrp then
+                        local pos = v:GetAttribute('OriginalPos') or v.Position
+                        local d = (pos - hrp.Position).Magnitude
+                        if not nearestDist or d < nearestDist then
+                            nearest, nearestDist = v, d
+                        end
+                    end
+                end
+                if nearest then
+                    local cd = nearest:FindFirstChildOfClass('ClickDetector')
+                    if cd then
+                        local last = _CASH_AURA_LAST_CLICK[nearest]
+                        if not last or (now - last) >= 0.8 then
+                            _CASH_AURA_LAST_CLICK[nearest] = now
+                            pcall(function()
+                                fireclickdetector(cd)
+                            end)
+                        end
+                    end
+                end
+            end
+        else
+            for _, v in pairs(Cash) do
+                local clickDetector = v:FindFirstChildOfClass('ClickDetector')
+                if clickDetector then
+                    local last = _CASH_AURA_LAST_CLICK[v]
+                    if not last or (now - last) >= 0.5 then
+                        _CASH_AURA_LAST_CLICK[v] = now
+                        pcall(function()
+                            fireclickdetector(clickDetector)
+                        end)
+                    end
+                end
             end
         end
 
-        task.wait(COOLDOWN)
+        task.wait(cooldown)
     end
 end
 
-Tab1:AddToggle('Cash_Aura_Toggle', {
+local cash_aura_toggle = Tab1:AddToggle('Cash_Aura_Toggle', {
     Text = 'Cash Aura',
     Default = false,
     Callback = function(Value)
         CASH_AURA_ENABLED = Value
         if CASH_AURA_ENABLED then
             task.spawn(CashAura)
+        else
+            _CASH_AURA_LAST_CLICK = {}
+        end
+    end,
+})
+
+local cash_aura_depbox = Tab1:AddDependencyBox()
+cash_aura_depbox:AddToggle('CashAuraHumanize', {
+    Text = 'humanize',
+    Default = false,
+    Callback = function(v)
+        CASH_AURA_HUMANIZE = v
+    end,
+})
+cash_aura_depbox:AddSlider('CashAuraSpeed', {
+    Text = 'Speed',
+    Min = 1,
+    Max = 10,
+    Default = CASH_AURA_SPEED,
+    Rounding = 0,
+    Suffix = '',
+    Compact = true,
+    Callback = function(v)
+        CASH_AURA_SPEED = v
+    end,
+})
+
+cash_aura_depbox:AddSlider('CashAuraRange', {
+    Text = 'Range',
+    Min = 5,
+    Max = 20,
+    Default = CASH_AURA_RANGE,
+    Rounding = 0,
+    Suffix = '°',
+    Compact = true,
+    Callback = function(v)
+        CASH_AURA_RANGE = v
+    end,
+})
+
+cash_aura_depbox:SetupDependencies({
+    { cash_aura_toggle, true }
+})
+
+-- FireArmor Auto-Buy System
+local FIREARMOR_ENABLED = false
+local FIREARMOR_MONITORING_TASK = nil
+local shopCFrame = CFrame.new(-1176.60, 31.50, -478.90)
+
+-- Function to buy Fire Armor
+local function buyFireArmor()
+    local ignored = workspace:FindFirstChild("Ignored")
+    if not ignored then return false end
+    local shop = ignored:FindFirstChild("Shop")
+    if not shop then return false end
+    local fireArmor = shop:FindFirstChild("[Fire Armor] - $2623")
+    if not fireArmor then return false end
+
+    local remoteEvent = nil
+    for _, obj in ipairs(fireArmor:GetChildren()) do
+        if obj:IsA("RemoteEvent") then
+            remoteEvent = obj
+            break
+        end
+    end
+    if not remoteEvent then
+        for _, obj in ipairs(shop:GetDescendants()) do
+            if obj:IsA("RemoteEvent") then
+                remoteEvent = obj
+                break
+            end
+        end
+    end
+
+    if remoteEvent then
+        remoteEvent:FireServer()
+        return true
+    else
+        local clickDetector = fireArmor:FindFirstChildOfClass("ClickDetector")
+        if clickDetector then
+            fireclickdetector(clickDetector)
+            return true
+        end
+    end
+
+    return false
+end
+
+-- Teleport function
+local function teleportTo(cframe)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        LocalPlayer.Character.HumanoidRootPart.CFrame = cframe
+    end
+end
+
+-- Short wait function
+local function waitSeconds(seconds)
+    local start = tick()
+    while tick() - start < seconds do
+        RunService.Heartbeat:Wait()
+    end
+end
+
+-- Auto Armor Monitor
+local function startFireArmorMonitor()
+    if FIREARMOR_MONITORING_TASK then return end
+    FIREARMOR_MONITORING_TASK = task.spawn(function()
+        while not LocalPlayer or not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") do
+            task.wait(0.05)
+        end
+        
+        -- Wait a bit after character spawn to let inventory load properly
+        task.wait(2)
+
+        local fireArmorValue = nil
+        while not fireArmorValue do
+            local bodyEffects = Workspace:FindFirstChild("Players")
+            if bodyEffects then
+                local myEffects = bodyEffects:FindFirstChild(LocalPlayer.Name)
+                if myEffects then
+                    local effects = myEffects:FindFirstChild("BodyEffects")
+                    if effects then
+                        fireArmorValue = effects:FindFirstChild("FireArmor")
+                    end
+                end
+            end
+            task.wait(0.1)
+        end
+
+        local lastPurchase = 0
+        while FIREARMOR_ENABLED do
+            local currentArmorValue = fireArmorValue.Value
+            local shouldBuy = false
+            
+            -- Check if player already has fire armor equipped
+            local hasFireArmor = false
+            
+            -- Simple check: if armor value is above 0, assume we have fire armor
+            if currentArmorValue > 0 then
+                hasFireArmor = true
+            end
+            
+            -- Additional check: look for fire armor tools
+            if not hasFireArmor and LocalPlayer.Character then
+                local backpack = LocalPlayer:FindFirstChild("Backpack")
+                if backpack then
+                    for _, tool in pairs(backpack:GetChildren()) do
+                        if tool:IsA("Tool") and tool.Name:find("Fire") and tool.Name:find("Armor") then
+                            hasFireArmor = true
+                            break
+                        end
+                    end
+                end
+                
+                if not hasFireArmor then
+                    for _, tool in pairs(LocalPlayer.Character:GetChildren()) do
+                        if tool:IsA("Tool") and tool.Name:find("Fire") and tool.Name:find("Armor") then
+                            hasFireArmor = true
+                            break
+                        end
+                    end
+                end
+            end
+            
+            -- Only buy if player doesn't already have fire armor and armor is completely gone
+            if not hasFireArmor and currentArmorValue == 0 then
+                shouldBuy = true
+            end
+            
+            -- Execute purchase if conditions are met and cooldown has passed (3 second cooldown to prevent spam)
+            if shouldBuy and tick() - lastPurchase > 3 then
+                task.wait(0.05)
+                
+                -- Final check to make sure armor is still 0
+                if fireArmorValue.Value == 0 then
+                    lastPurchase = tick()
+                    local rootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    if rootPart then
+                        local originalCFrame = rootPart.CFrame
+                        teleportTo(shopCFrame)
+                        waitSeconds(0.1)
+                        buyFireArmor()
+                        waitSeconds(0.1)
+                        teleportTo(originalCFrame)
+                        
+                        -- Wait a bit after purchase to prevent rapid looping
+                        task.wait(1)
+                    end
+                end
+            end
+            
+            task.wait(0.05) -- Check every 0.05 seconds
+        end
+
+        FIREARMOR_MONITORING_TASK = nil
+    end)
+end
+
+local function stopFireArmorMonitor()
+    if FIREARMOR_MONITORING_TASK then
+        task.cancel(FIREARMOR_MONITORING_TASK)
+        FIREARMOR_MONITORING_TASK = nil
+    end
+end
+
+-- Handle character respawn for fire armor monitoring
+local respawnConnection = nil
+local function setupRespawnHandling()
+    if respawnConnection then
+        respawnConnection:Disconnect()
+    end
+    
+    respawnConnection = LocalPlayer.CharacterAdded:Connect(function()
+        if FIREARMOR_ENABLED then
+            -- Stop current monitoring and restart after respawn
+            stopFireArmorMonitor()
+            task.wait(1) -- Give time for character to fully load
+            if FIREARMOR_ENABLED then -- Check if still enabled after wait
+                startFireArmorMonitor()
+            end
+        end
+    end)
+end
+
+Tab1:AddToggle('FireArmor', {
+    Text = 'FireArmor',
+    Default = false,
+    Callback = function(state)
+        FIREARMOR_ENABLED = state
+        if state then
+            setupRespawnHandling() -- Setup respawn handling
+            startFireArmorMonitor()
+        else
+            stopFireArmorMonitor()
+            if respawnConnection then
+                respawnConnection:Disconnect()
+                respawnConnection = nil
+            end
         end
     end,
 })
@@ -395,10 +981,30 @@ Tab1:AddToggle('AntiSitToggle', {
     end,
 })
 
-Tab1:AddToggle('AntiFlingToggle', {
+local anti_fling_toggle = Tab1:AddToggle('AntiFlingToggle', {
     Text = 'Anti Fling',
     Default = false,
-    Callback = function(state)
+})
+
+-- Create dependency box for anti-fling strength
+local anti_fling_depbox = Tab1:AddDependencyBox()
+local anti_fling_strength = anti_fling_depbox:AddSlider('AntiFlingStrength', { 
+    Text = 'Strength', 
+    Min = 0.1, 
+    Max = 10, 
+    Default = 0.2, 
+    Rounding = 1, 
+    Suffix = "", 
+    Compact = true 
+})
+
+-- Setup dependency - show strength slider only when anti-fling is enabled
+anti_fling_depbox:SetupDependencies({
+    { anti_fling_toggle, true }
+})
+
+-- Anti-fling callback with configurable strength
+anti_fling_toggle:OnChanged(function(state)
         local rs = game:GetService("RunService")
         local Players = game:GetService("Players")
         local LocalPlayer = Players.LocalPlayer
@@ -426,7 +1032,11 @@ Tab1:AddToggle('AntiFlingToggle', {
                     local currentHrp = LocalPlayer.Character.HumanoidRootPart
                     local distance = (currentHrp.Position - last).Magnitude
                     
-                    if distance > 1 then
+                -- Use configurable strength (lower = weaker, higher = stronger)
+                local strength = anti_fling_strength and anti_fling_strength.Value or 1
+                local threshold = 11 - strength  -- Invert the logic: higher strength = lower threshold
+                
+                if distance > threshold then
                         currentHrp.CFrame = CFrame.new(last)
                         currentHrp.Velocity = Vector3.zero
                         currentHrp.AssemblyLinearVelocity = Vector3.zero
@@ -485,8 +1095,7 @@ Tab1:AddToggle('AntiFlingToggle', {
                 _G.characterAddedConnection = nil
             end
         end
-    end,
-})
+end)
 
 -- Misc02 Tab Content
 local function findKeyButton()
@@ -598,7 +1207,38 @@ Tab2:AddButton({
         teleportToUnjailPositionAndBuyKey()
     end,
     DoubleClick = false,
-    Tooltip = 'Teleport to unjail position and buy key',
+})
+
+Tab2:AddButton({
+    Text = 'AntiLag',
+    Func = function()
+        for _, player in ipairs(game.Players:GetPlayers()) do
+            if player.Character then
+                pcall(function()
+                    for _, accessory in ipairs(player.Character:GetChildren()) do
+                        if accessory:IsA("Accessory") then
+                            accessory:Destroy()
+                        end
+                    end
+                    
+                    local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+                    if humanoid then
+                        for _, clothing in ipairs(humanoid:GetChildren()) do
+                            if clothing:IsA("Clothing") or clothing:IsA("Shirt") or clothing:IsA("Pants") or clothing:IsA("ShirtGraphic") then
+                                clothing:Destroy()
+                            end
+                        end
+                    end
+                    for _, clothing in ipairs(player.Character:GetChildren()) do
+                        if clothing:IsA("Clothing") or clothing:IsA("Shirt") or clothing:IsA("Pants") or clothing:IsA("ShirtGraphic") then
+                            clothing:Destroy()
+                        end
+                    end
+                end)
+            end
+        end
+    end,
+    DoubleClick = false,
 })
 
 local Players = game:GetService('Players')
@@ -1577,7 +2217,10 @@ end
 
 Toggles[toggleName]:OnChanged(onToggleChanged)
 
-local playerListSection = tabs.lua:AddLeftGroupbox('PlayerList')
+local playerListTabBox = tabs.lua:AddLeftTabbox()
+local playerListTab = playerListTabBox:AddTab('fund01')
+local strafesTab = playerListTabBox:AddTab('fund02')
+local addonsTab = playerListTabBox:AddTab('fund03')
 
 local function getAllPlayers()
     local players = {}
@@ -1590,7 +2233,7 @@ local function getAllPlayers()
     return players
 end
 
-local playerDropdown = playerListSection:AddDropdown('player_dropdown', {
+local playerDropdown = playerListTab:AddDropdown('player_dropdown', {
     Values = {},
     Default = 1,
     Multi = false,
@@ -1620,12 +2263,12 @@ game.Players.PlayerRemoving:Connect(function()
     updatePlayerDropdown()
 end)
 
-local liveNote = playerListSection:AddLabel('result: ?', true)
+local liveNote = playerListTab:AddLabel('result: ?', true)
 liveNote.Name = 'live_note'
 
 local lastValidMatch = nil
 
-local searchInput = playerListSection:AddInput('player_search', {
+local searchInput = playerListTab:AddInput('player_search', {
     Text = 'player search',
     Tooltip = '$$$SUDO APT OPSEC',
     Placeholder = '',
@@ -1838,7 +2481,7 @@ elseif game:GetService("ReplicatedStorage"):WaitForChild("MainRemotes"):WaitForC
 else
 end
 
-local teleportButton = playerListSection:AddButton({
+local teleportButton = playerListTab:AddButton({
     Text = 'Teleport',
     Func = function()
         local selectedPlayer = playerDropdown.Value
@@ -2146,7 +2789,7 @@ local function proceedWithStomp(Target, selectedPlayer, localPlayer, humanoidRoo
     end
 end
 
-local stompButton = playerListSection:AddButton({
+local stompButton = playerListTab:AddButton({
     Text = 'Stomp',
     Func = function()
         local selectedPlayer = playerDropdown.Value
@@ -2445,4 +3088,965 @@ local stompSubButton = stompButton:AddButton({
 })
 
 
-playerListSection:AddLabel('@wanderkidd', true)
+playerListTab:AddLabel('@wanderkidd', true)
+
+
+local function safe_notify(msg, lifetime)
+    if not msg then return end
+    lifetime = lifetime or 3
+    
+    pcall(function()
+        if api and type(api.notify) == "function" then
+            api:notify(msg, lifetime)
+        else
+            print("[Notification]: " .. tostring(msg))
+        end
+    end)
+end
+
+local function set_desync_cframe(cframe)
+    if api and type(api.set_desync_cframe) == "function" then
+        pcall(function()
+            api:set_desync_cframe(cframe)
+        end)
+    end
+end
+
+local function safe_call(fn, ...)
+    if type(fn) ~= "function" then return nil end
+    local ok, res = pcall(fn, ...)
+    if not ok then
+        return nil
+    end
+    return res
+end
+
+local function call_api(name, ...)
+    if type(api) ~= "table" then return nil end
+    local candidates = { name, name:gsub("_([a-z])", function(c) return c:upper() end), name:gsub("_", ""), name:lower(), name:upper() }
+    for _, cand in ipairs(candidates) do
+        local fn = api[cand]
+        if type(fn) == "function" then
+            return safe_call(fn, api, ...)
+        end
+    end
+    return nil
+end
+
+local function has_api(name)
+    if type(api) ~= "table" then return false end
+    local candidates = { name, name:gsub("_([a-z])", function(c) return c:upper() end), name:gsub("_", ""), name:lower(), name:upper() }
+    for _, cand in ipairs(candidates) do
+        if type(api[cand]) == "function" then return true end
+    end
+    return false
+end
+
+local function safe_wait(sec)
+    if type(task) == "table" and type(task.wait) == "function" then
+        return task.wait(sec)
+    elseif type(wait) == "function" then
+        return wait(sec)
+    else
+        local t0 = os.clock()
+        while os.clock() - t0 < (sec or 0) do end
+        return nil
+    end
+end
+
+local function safe_spawn(fn)
+    if type(task) == "table" and type(task.spawn) == "function" then
+        return task.spawn(fn)
+    elseif type(spawn) == "function" then
+        return spawn(fn)
+    else
+        local co = coroutine.create(fn)
+        coroutine.resume(co)
+        return co
+    end
+end
+
+local left = strafesTab
+local addons_left = addonsTab
+
+local function make_control(default)
+    local ctrl = { Value = default }
+    function ctrl:SetValue(v) ctrl.Value = v end
+    function ctrl:OnChanged(_) end
+    ctrl.Properties = {}
+    function ctrl:Display() end
+    function ctrl:DoClick() end
+    return ctrl
+end
+
+if not left then
+    left = {
+        AddToggle = function(_, id, opts) return make_control(opts and opts.Default or false) end,
+        AddSlider = function(_, id, opts) return make_control(opts and opts.Default or 0) end,
+        AddDropdown = function(_, id, opts) return make_control(opts and opts.Default or 1) end,
+    }
+end
+
+if not addons_left then
+    addons_left = {
+        AddToggle = function(_, id, opts) return make_control(opts and opts.Default or false) end,
+        AddSlider = function(_, id, opts) return make_control(opts and opts.Default or 0) end,
+        AddInput = function(_, id, opts) return make_control(opts and opts.Default or "") end,
+        AddColorPicker = function(_, id, opts) return make_control(opts and opts.Default or Color3.fromRGB(255, 255, 255)) end,
+        AddButton = function(_, id, opts) 
+            local ctrl = make_control(false)
+            if opts and opts.Func then
+                ctrl.Func = opts.Func
+            else
+                ctrl.Func = function() end
+            end
+            return ctrl
+        end,
+        AddKeybind = function(_, id, opts) return make_control(opts and opts.Default or "V") end,
+    }
+end
+
+-- Strafes Controls
+local enable = left:AddToggle("strafes_enable", { Text = "Enable", Default = true, Tooltip = "Enable/disable strafe system" })
+local force_unsafe = left:AddToggle("strafes_force_unsafe", { Text = "Force Unsafe", Default = false, Tooltip = "Force unsafe strafe settings" })
+local ignore_visibility = left:AddToggle("strafes_ignore_visibility", { Text = "Ignore Visibility Check", Default = false, Tooltip = "Ignore target visibility when strafing" })
+local void_resolver = left:AddToggle("strafes_void_resolver", { Text = "VoidResolver", Default = true, Tooltip = "Prevent targeting players in void (distance > 5000 studs)" })
+local anti_predictive = left:AddToggle("strafes_anti_predictive", { Text = "Anti-Predictive Path", Default = true, Tooltip = "Use anti-predictive movement patterns" })
+
+left:AddDivider()
+
+local mode_dropdown = left:AddDropdown("strafes_mode", { Text = "Strafe Mode", Default = 1, Values = {"Chaos","Burst","Void","Adaptive","Jitter","Micro","Retreat","Push","Counter","Stutter","Orbital","Escape","Quantum","AntiAim","Pringle","Random Spike","Circle","Figure8","Gridshot","Spiral","SideDash","ZigZag","PulseInOut","Anchors","YoYo","Pendulum","Void Strafe","Adaptive Strafe"}, Tooltip = "Select strafe movement pattern" })
+
+local slider_base_height = left:AddSlider("strafes_base_height", { Text = "Base Height", Min = -15, Max = 70, Default = 54, Rounding = 1, Suffix = " studs", Compact = true, Tooltip = "How high/low you strafe" })
+local slider_base_distance = left:AddSlider("strafes_base_distance", { Text = "Base Distance", Min = 0, Max = 70, Default = 34, Rounding = 1, Suffix = " studs", Compact = true, Tooltip = "How far from target" })
+local slider_base_speed = left:AddSlider("strafes_base_speed", { Text = "Speed Multiplier", Min = 0.5, Max = 10.0, Default = 1.0, Rounding = 1, Suffix = "x", Compact = true, Tooltip = "How fast strafes move" })
+local slider_randomness = left:AddSlider("strafes_randomness", { Text = "Randomness Intensity", Min = 0, Max = 2, Default = 2, Rounding = 0, Suffix = "x", Compact = true, Tooltip = "How unpredictable movement is" })
+
+left:AddDivider()
+
+local toggle_cycle = left:AddToggle("strafes_cycle", { Text = "Auto Cycle Modes", Default = false, Tooltip = "Automatically cycle between strafe modes" })
+local slider_cycle_interval = left:AddSlider("strafes_cycle_interval", { Text = "Cycle Interval", Min = 0.5, Max = 3.0, Default = 1.0, Rounding = 1, Suffix = "s", Compact = true, Tooltip = "How fast to switch modes" })
+local picker_cycle_modes = left:AddDropdown("strafes_cycle_modes", { Text = "Cycle Modes", Default = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}, Values = {"Chaos","Burst","Void","Adaptive","Jitter","Micro","Retreat","Push","Counter","Stutter","Orbital","Escape","Quantum","AntiAim","Pringle"}, Multi = true, Tooltip = "Select which modes to cycle through" })
+
+if left and type(left.AddLabel) == "function" then
+    left:AddLabel("@wanderkidd")
+end
+
+local better_void_toggle = addons_left:AddToggle("better_void_enabled", { Text = "Better Void", Default = false })
+local keybind_void = nil
+if better_void_toggle and type(better_void_toggle.AddKeyPicker) == "function" then
+    keybind_void = better_void_toggle:AddKeyPicker("better_void_keybind", { Default = "N", Mode = "Toggle", Text = "Void [Dimensional tear Jutsu]", NoUI = false, SyncToggleState = true })
+end
+local slider_void_range = addons_left:AddSlider("better_void_range", { Text = "Range", Min = 1000, Max = 10000000, Default = 250000, Rounding = 0, Suffix = "", Compact = true })
+
+-- Create dependency box for BetterVoid options
+local better_void_depbox = addons_left:AddDependencyBox()
+
+-- Add Randomize Y-Axis as first dependency
+local toggle_randomize_y = better_void_depbox:AddToggle("better_void_randomize_y", { Text = "Randomize Y-Axis", Default = true })
+
+-- Add Spam as second dependency
+local toggle_spam = better_void_depbox:AddToggle("better_void_spam", { Text = "Spam", Default = false })
+
+-- Create sub-dependency box for spam settings
+local spam_depbox = better_void_depbox:AddDependencyBox()
+local slider_void_duration = spam_depbox:AddSlider("better_void_duration", { Text = "Void Duration", Min = 0.02, Max = 1, Default = 0.5, Rounding = 2, Suffix = "", Compact = true })
+local slider_stop_duration = spam_depbox:AddSlider("better_void_stop_duration", { Text = "Stop Duration)", Min = 0.02, Max = 1, Default = 0.15, Rounding = 2, Suffix = "", Compact = true })
+
+-- Setup dependencies
+better_void_depbox:SetupDependencies({
+    { better_void_toggle, true }
+})
+
+spam_depbox:SetupDependencies({
+    { toggle_spam, true }
+})
+
+addons_left:AddDivider()
+
+local toggle_custom_hit_sound = addons_left:AddToggle("custom_hit_sound", { Text = "Custom Hit Sound", Default = false })
+local input_sound_id = addons_left:AddInput("sound_id", { Text = "Sound ID", Default = "92812654212522", Numeric = true, Finished = true })
+local slider_volume = addons_left:AddSlider("sound_volume", { Text = "Volume", Min = 0, Max = 100, Default = 50, Rounding = 0, Suffix = "%", Compact = true })
+local slider_sound_speed = addons_left:AddSlider("sound_speed", { Text = "Sound Speed", Min = 0.1, Max = 2.0, Default = 1.0, Rounding = 1, Suffix = "x", Compact = true })
+
+local better_void_connections = {}
+local addon_loaded = true
+
+local better_void_loop = task.spawn(function()
+    local spam_start_time = 0
+    local last_spam_state = false
+    
+    while addon_loaded do
+            local range = slider_void_range and slider_void_range.Value or 250000000
+            local randomize_y = toggle_randomize_y and toggle_randomize_y.Value or true
+        local spam_mode = toggle_spam and toggle_spam.Value or false
+        local void_enabled = better_void_toggle and better_void_toggle.Value
+        
+        -- Reset spam timer when spam is turned on
+        if spam_mode and not last_spam_state then
+            spam_start_time = tick()
+        end
+        last_spam_state = spam_mode
+        
+        if void_enabled then
+            if spam_mode then
+                -- Spam mode with customizable void and stop durations
+                local void_duration = slider_void_duration and slider_void_duration.Value or 0.7
+                local stop_duration = slider_stop_duration and slider_stop_duration.Value or 0.2
+                local spam_cycle_duration = void_duration + stop_duration
+                
+                local current_time = tick()
+                local cycle_time = (current_time - spam_start_time) % spam_cycle_duration
+                
+                if cycle_time < void_duration then
+                    -- Void for custom duration
+            local x = math.random(-range, range)
+            local z = math.random(-range, range)
+            local y = randomize_y and math.random(-range, range) or 0
+            
+            set_desync_cframe(CFrame.new(x, y, z))
+                    task.wait() -- Normal frame rate during void phase
+                else
+                    -- Stop voiding for custom duration
+                    task.wait(0.1) -- Wait during stop phase
+                end
+            else
+                -- Normal void mode
+                local x = math.random(-range, range)
+                local z = math.random(-range, range)
+                local y = randomize_y and math.random(-range, range) or 0
+                
+                set_desync_cframe(CFrame.new(x, y, z))
+        task.wait()
+            end
+        else
+            task.wait()
+        end
+    end
+end)
+
+table.insert(better_void_connections, better_void_loop)
+
+if addons_left and type(addons_left.AddLabel) == "function" then
+    addons_left:AddLabel("@wanderkidd")
+end
+
+if addons_left and type(addons_left.AddButton) == "function" then
+    local success, result = pcall(function()
+        return addons_left:AddButton("Animation Pack", { Text = "Animation Pack", Func = function()
+        repeat
+            wait()
+        until game:IsLoaded()
+        and game.Players.LocalPlayer.Character:FindFirstChild("FULLY_LOADED_CHAR")
+        and game.Players.LocalPlayer.PlayerGui.MainScreenGui:FindFirstChild("AnimationPack")
+        and game.Players.LocalPlayer.PlayerGui.MainScreenGui:FindFirstChild("AnimationPlusPack")
+        
+        local Animations = game.ReplicatedStorage:WaitForChild("ClientAnimations")
+
+        local anims = {
+            "Lean", "Lay", "Dance1", "Dance2", "Greet", "Chest Pump", "Praying",
+            "TheDefault", "Sturdy", "Rossy", "Griddy", "TPose", "SpeedBlitz"
+        }
+        for _, name in ipairs(anims) do
+            local a = Animations:FindFirstChild(name)
+            if a then a:Destroy() end
+        end
+
+        local function NewAnim(name, id)
+            local a = Instance.new("Animation", Animations)
+            a.Name = name
+            a.AnimationId = "rbxassetid://" .. id
+            return a
+        end
+
+        local LeanAnimation = NewAnim("Lean", "3152375249")
+        local LayAnimation = NewAnim("Lay", "3152378852")
+        local Dance1Animation = NewAnim("Dance1", "3189773368")
+        local Dance2Animation = NewAnim("Dance2", "3189776546")
+        local GreetAnimation = NewAnim("Greet", "3189777795")
+        local ChestPumpAnimation = NewAnim("Chest Pump", "3189779152")
+        local PrayingAnimation = NewAnim("Praying", "3487719500")
+        local TheDefaultAnimation = NewAnim("TheDefault", "11710529975")
+        local SturdyAnimation = NewAnim("Sturdy", "11710524717")
+        local RossyAnimation = NewAnim("Rossy", "11710527244")
+        local GriddyAnimation = NewAnim("Griddy", "11710529220")
+        local TPoseAnimation = NewAnim("TPose", "11710524200")
+        local SpeedBlitzAnimation = NewAnim("SpeedBlitz", "11710541744")
+
+        function AnimationPack(Character)
+            Character:WaitForChild("Humanoid")
+            repeat wait() until Character:FindFirstChild("FULLY_LOADED_CHAR")
+                and game.Players.LocalPlayer.PlayerGui.MainScreenGui:FindFirstChild("AnimationPack")
+                and game.Players.LocalPlayer.PlayerGui.MainScreenGui:FindFirstChild("AnimationPlusPack")
+
+            local Player = game.Players.LocalPlayer
+            local Humanoid = Character.Humanoid
+            local AnimationPack = Player.PlayerGui.MainScreenGui.AnimationPack
+            local AnimationPackPlus = Player.PlayerGui.MainScreenGui.AnimationPlusPack
+            local ScrollingFrame = AnimationPack.ScrollingFrame
+            local CloseButton = AnimationPack.CloseButton
+            local ScrollingFramePlus = AnimationPackPlus.ScrollingFrame
+            local CloseButtonPlus = AnimationPackPlus.CloseButton
+
+            local Animator = Humanoid:FindFirstChildOfClass("Animator") or Instance.new("Animator", Humanoid)
+
+            local animations = {
+                Lean = Humanoid:LoadAnimation(LeanAnimation),
+                Lay = Humanoid:LoadAnimation(LayAnimation),
+                Dance1 = Humanoid:LoadAnimation(Dance1Animation),
+                Dance2 = Humanoid:LoadAnimation(Dance2Animation),
+                Greet = Humanoid:LoadAnimation(GreetAnimation),
+                ChestPump = Humanoid:LoadAnimation(ChestPumpAnimation),
+                Praying = Humanoid:LoadAnimation(PrayingAnimation),
+                TheDefault = Humanoid:LoadAnimation(TheDefaultAnimation),
+                Sturdy = Humanoid:LoadAnimation(SturdyAnimation),
+                Rossy = Humanoid:LoadAnimation(RossyAnimation),
+                Griddy = Humanoid:LoadAnimation(GriddyAnimation),
+                TPose = Humanoid:LoadAnimation(TPoseAnimation),
+                SpeedBlitz = Humanoid:LoadAnimation(SpeedBlitzAnimation)
+            }
+
+            AnimationPack.Visible = true
+            AnimationPackPlus.Visible = true
+            ScrollingFrame.UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+            ScrollingFramePlus.UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+            local function RenameButtons(frame, RenameMap)
+                for _, btn in pairs(frame:GetChildren()) do
+                    if btn:IsA("TextButton") and RenameMap[btn.Text] then
+                        btn.Name = RenameMap[btn.Text]
+                    end
+                end
+            end
+
+            RenameButtons(ScrollingFrame, {
+                ["Lean"] = "LeanButton",
+                ["Lay"] = "LayButton",
+                ["Dance1"] = "Dance1Button",
+                ["Dance2"] = "Dance2Button",
+                ["Greet"] = "GreetButton",
+                ["Chest Pump"] = "ChestPumpButton",
+                ["Praying"] = "PrayingButton",
+            })
+
+            RenameButtons(ScrollingFramePlus, {
+                ["The Default"] = "TheDefaultButton",
+                ["Sturdy"] = "SturdyButton",
+                ["Rossy"] = "RossyButton",
+                ["Griddy"] = "GriddyButton",
+                ["T Pose"] = "TPoseButton",
+                ["Speed Blitz"] = "SpeedBlitzButton",
+            })
+
+            local function StopAll()
+                for _, anim in pairs(animations) do anim:Stop() end
+            end
+
+            local function ConnectButton(ButtonName, AnimKey, parent)
+                local btn = parent:FindFirstChild(ButtonName)
+                if btn then
+                    btn.MouseButton1Click:Connect(function()
+                        StopAll()
+                        animations[AnimKey]:Play()
+                    end)
+                end
+            end
+
+            ConnectButton("LeanButton", "Lean", ScrollingFrame)
+            ConnectButton("LayButton", "Lay", ScrollingFrame)
+            ConnectButton("Dance1Button", "Dance1", ScrollingFrame)
+            ConnectButton("Dance2Button", "Dance2", ScrollingFrame)
+            ConnectButton("GreetButton", "Greet", ScrollingFrame)
+            ConnectButton("ChestPumpButton", "ChestPump", ScrollingFrame)
+            ConnectButton("PrayingButton", "Praying", ScrollingFrame)
+
+            ConnectButton("TheDefaultButton", "TheDefault", ScrollingFramePlus)
+            ConnectButton("SturdyButton", "Sturdy", ScrollingFramePlus)
+            ConnectButton("RossyButton", "Rossy", ScrollingFramePlus)
+            ConnectButton("GriddyButton", "Griddy", ScrollingFramePlus)
+            ConnectButton("TPoseButton", "TPose", ScrollingFramePlus)
+            ConnectButton("SpeedBlitzButton", "SpeedBlitz", ScrollingFramePlus)
+
+            AnimationPack.MouseButton1Click:Connect(function()
+                ScrollingFrame.Visible = true
+                CloseButton.Visible = true
+                AnimationPackPlus.Visible = false
+            end)
+
+            AnimationPackPlus.MouseButton1Click:Connect(function()
+                ScrollingFramePlus.Visible = true
+                CloseButtonPlus.Visible = true
+                AnimationPack.Visible = false
+            end)
+
+            CloseButton.MouseButton1Click:Connect(function()
+                ScrollingFrame.Visible = false
+                CloseButton.Visible = false
+                AnimationPackPlus.Visible = true
+            end)
+
+            CloseButtonPlus.MouseButton1Click:Connect(function()
+                ScrollingFramePlus.Visible = false
+                CloseButtonPlus.Visible = false
+                AnimationPack.Visible = true
+            end)
+
+            Humanoid.Running:Connect(StopAll)
+            game.Players.LocalPlayer.CharacterAdded:Connect(StopAll)
+        end
+
+        AnimationPack(game.Players.LocalPlayer.Character)
+        game.Players.LocalPlayer.CharacterAdded:Connect(AnimationPack)
+        end, Tooltip = "Load animation pack" })
+        end)
+    if not success then
+    end
+end
+
+local function connect_control(ctrl, fn)
+    if type(ctrl) ~= "table" or type(fn) ~= "function" then return end
+    
+    pcall(function()
+        if type(ctrl.OnChanged) == "function" then
+            pcall(function() ctrl:OnChanged(fn) end)
+            return
+        end
+        
+        if type(ctrl.OnChanged) == "table" and type(ctrl.OnChanged.Connect) == "function" then
+            pcall(function() ctrl.OnChanged:Connect(fn) end)
+            return
+        end
+        
+        if type(ctrl.Changed) == "table" and type(ctrl.Changed.Connect) == "function" then
+            pcall(function() ctrl.Changed:Connect(function(prop)
+                if prop == "Value" or prop == "value" then
+                    pcall(function() fn(val(ctrl, nil)) end)
+                end
+            end) end)
+            return
+        end
+    end)
+    
+    local hooked = false
+    pcall(function()
+        local ok, v = pcall(function() return ctrl.Value end)
+        if ok and v ~= nil and type(v) == "userdata" and type(v.GetPropertyChangedSignal) == "function" then
+            pcall(function()
+                v:GetPropertyChangedSignal("Value"):Connect(function()
+                    pcall(function() fn(val(ctrl, nil)) end)
+                end)
+            end)
+            hooked = true
+        end
+    end)
+    
+    if not hooked then
+        safe_spawn(function()
+            local last = nil
+            while true do
+                local ok2, v = pcall(function() return val(ctrl, nil) end)
+                if not ok2 then
+                    break
+                end
+                if v ~= last then
+                    last = v
+                    pcall(fn, v)
+                end
+                safe_wait(0.1)
+            end
+        end)
+    end
+end
+
+local function val(ctrl, d)
+    if not ctrl then return d end
+    local ok, v = pcall(function() return ctrl.Value end)
+    if ok then
+        if (type(v) == "table" or type(v) == "userdata") then
+            local ok2, inner = pcall(function() return v.Value end)
+            if ok2 and inner ~= nil then return inner end
+        end
+        if v ~= nil then return v end
+    end
+    
+    if type(ctrl.GetValue) == "function" then
+        local ok3, v3 = pcall(function() return ctrl:GetValue() end)
+        if ok3 and v3 ~= nil then return v3 end
+    end
+    
+    if type(ctrl.Get) == "function" then
+        local ok4, v4 = pcall(function() return ctrl:Get() end)
+        if ok4 and v4 ~= nil then return v4 end
+    end
+    
+    return d
+end
+
+connect_control(enable, function(v) pcall(register) end)
+connect_control(force_unsafe, function(v) pcall(register) end)
+connect_control(ignore_visibility, function(v) pcall(register) end)
+connect_control(void_resolver, function(v) pcall(register) end)
+connect_control(anti_predictive, function(v) pcall(register) end)
+connect_control(mode_dropdown, function(v) pcall(register) end)
+connect_control(toggle_cycle, function(v) pcall(register) end)
+connect_control(slider_cycle_interval, function(v) pcall(register) end)
+connect_control(picker_cycle_modes, function(v) pcall(register) end)
+
+local function register()
+    local function compute()
+        if not val(enable, false) then return nil end
+        
+        local client_cf = call_api("get_client_cframe")
+        if not client_cf then return nil end
+        
+        local center = client_cf.p
+        local target_cache = call_api("get_target_cache", "ragebot")
+        local ignore_visibility_check = val(ignore_visibility, false)
+        
+        if target_cache and target_cache.part and target_cache.part.Position then 
+            -- Void Resolver Check (hardened)
+            if val(void_resolver, false) then
+                local pos = target_cache.part.Position
+                local dist_from_client = (pos - client_cf.p).Magnitude
+                local void_limit = val(slider_void_range, 250000)
+                local y = pos.Y
+                -- conditions indicating target is in or beyond void
+                if not pos or dist_from_client > 5000 or y < -1000 or y > 100000 or pos.Magnitude > (void_limit * 2) then
+                    return nil
+                end
+            end
+            center = target_cache.part.Position
+        elseif not ignore_visibility_check then
+            return nil
+        else
+            local camera = workspace.CurrentCamera
+            if camera then
+                local camera_cf = camera.CFrame
+                center = camera_cf.p + camera_cf.LookVector * 10
+            else
+                center = client_cf.p
+            end
+        end
+        
+        local distance = val(slider_base_distance, 34)
+        local height = val(slider_base_height, 54)
+        local speed_multiplier = val(slider_base_speed, 1.0)
+        local randomness = val(slider_randomness, 2)
+        
+        local cycle_enabled = val(toggle_cycle, false)
+        local cycle_interval = val(slider_cycle_interval, 1.0)
+        
+        local mode = "Chaos"
+        
+        if cycle_enabled and picker_cycle_modes then
+            local t = (type(tick) == "function") and tick() or os.clock()
+            local selected_modes = {}
+            local picker_values = val(picker_cycle_modes, {})
+            local all_modes = {"Chaos","Burst","Void","Adaptive","Jitter","Micro","Retreat","Push","Counter","Stutter","Orbital","Escape","Quantum","AntiAim","Pringle"}
+
+            -- Normalize picker_values to a list of mode NAMES
+            if type(picker_values) == "table" then
+                local detected_boolean_map = false
+                for k, v in pairs(picker_values) do
+                    if type(v) == "boolean" then
+                        detected_boolean_map = true
+                        break
+                    end
+                end
+
+                if detected_boolean_map then
+                    -- Forms supported:
+                    -- { ["Chaos"]=true, ["Burst"]=false }
+                    -- { [1]=true, [3]=true }
+                    for k, is_selected in pairs(picker_values) do
+                        if is_selected then
+                            if type(k) == "string" then
+                                table.insert(selected_modes, k)
+                            elseif type(k) == "number" then
+                                local name = all_modes[k]
+                                if name then table.insert(selected_modes, name) end
+                            end
+                        end
+                    end
+                else
+                    -- Likely an array of indices or names: {1,2,5} or {"Chaos","Burst"}
+                    for _, entry in ipairs(picker_values) do
+                        if type(entry) == "number" then
+                            local name = all_modes[entry]
+                            if name then table.insert(selected_modes, name) end
+                        elseif type(entry) == "string" then
+                            table.insert(selected_modes, entry)
+                        end
+                    end
+                end
+            end
+
+            if #selected_modes == 0 then
+                selected_modes = all_modes
+            end
+
+            if #selected_modes > 0 then
+                local cycle_index = math.floor(t / cycle_interval) % #selected_modes + 1
+                mode = selected_modes[cycle_index]
+            end
+        else
+            local mode_dropdown_val = val(mode_dropdown, 1)
+            local mode_names = {"Chaos","Burst","Void","Adaptive","Jitter","Micro","Retreat","Push","Counter","Stutter","Orbital","Escape","Quantum","AntiAim","Pringle","Random Spike","Circle","Figure8","Gridshot","Spiral","SideDash","ZigZag","PulseInOut","Anchors","YoYo","Pendulum","Void Strafe","Adaptive Strafe"}
+            mode = mode_names[mode_dropdown_val] or "Chaos"
+        end
+        
+        local current_mode = mode
+        getgenv().wanderkidd_current_strafe_mode = current_mode
+        
+        local t = (type(tick) == "function") and tick() or os.clock()
+
+        -- Per-mode overrides to make modes feel distinctly different even with same base sliders
+        do
+            local baseDist, baseH, baseS, baseR = distance, height, speed_multiplier, randomness
+            local function set(dMul, hOffset, sMul, rMul)
+                distance = baseDist * (dMul or 1)
+                height = baseH + (hOffset or 0)
+                speed_multiplier = baseS * (sMul or 1)
+                randomness = baseR * (rMul or 1)
+            end
+            if current_mode == "Chaos" then
+                set(1.00, 0, 1.20, 1.50)
+            elseif current_mode == "Burst" then
+                set(0.70, 2 + 3*math.sin(t*2), 1.40, 0.80)
+            elseif current_mode == "Void" then
+                set(0.85, -3, 0.80, 0.50)
+            elseif current_mode == "Adaptive" then
+                set(0.90, 4*math.sin(t*0.7), 1.10, 1.00)
+            elseif current_mode == "Jitter" then
+                set(0.50, 1*math.sin(t*9), 1.80, 2.00)
+            elseif current_mode == "Micro" then
+                set(0.30, 0, 2.50, 0.40)
+            elseif current_mode == "Retreat" then
+                set(1.30, 6*math.sin(t*0.5), 0.90, 0.60)
+            elseif current_mode == "Push" then
+                set(0.90, -2, 1.60, 0.70)
+            elseif current_mode == "Counter" then
+                set(0.75, 0, 1.30, 0.60)
+            elseif current_mode == "Stutter" then
+                set(0.60, 3*math.sin(t*1.1), 2.20, 0.50)
+            elseif current_mode == "Orbital" then
+                set(1.10, 4*math.sin(t*0.8), 0.90, 0.80)
+            elseif current_mode == "Escape" then
+                set(0.95, -4*math.abs(math.sin(t)), 1.50, 0.50)
+            elseif current_mode == "Quantum" then
+                set(0.50, 2*math.sin(t*3.1), 1.70, 1.20)
+            elseif current_mode == "AntiAim" then
+                set(0.40, (math.random()-0.5)*6, 2.20, 1.80)
+            elseif current_mode == "Pringle" then
+                set(0.80, 2*math.sin(t*3.14159), 1.10, 0.70)
+            elseif current_mode == "Random Spike" then
+                set(0.70, (math.random()-0.5)*8, 2.00, 1.60)
+            elseif current_mode == "Circle" then
+                set(1.00, 0, 1.00, 0.30)
+            elseif current_mode == "Figure8" then
+                set(0.85, 2*math.sin(t*1.2), 1.10, 0.60)
+            elseif current_mode == "Gridshot" then
+                set(0.55, 0, 2.60, 0.20)
+            elseif current_mode == "Spiral" then
+                set(1.20, 3*math.sin(t*0.6), 0.80, 0.50)
+            elseif current_mode == "SideDash" then
+                set(0.60, 0, 2.20, 0.40)
+            elseif current_mode == "ZigZag" then
+                set(0.75, 1.5*math.sin(t*2.7), 1.80, 0.70)
+            elseif current_mode == "PulseInOut" then
+                set(0.90, 2*math.sin(t*1.8), 1.20, 0.60)
+            elseif current_mode == "Anchors" then
+                set(0.65, 0, 0.90, 0.40)
+            elseif current_mode == "YoYo" then
+                set(0.50, 5*math.abs(math.sin(t*2)) - 2, 2.40, 0.50)
+            elseif current_mode == "Pendulum" then
+                set(1.10, 2*math.sin(t), 0.80, 0.40)
+            elseif current_mode == "Void Strafe" then
+                set(0.80, -2, 1.20, 0.40)
+            elseif current_mode == "Adaptive Strafe" then
+                set(0.85, 2*math.sin(t*1.4), 1.30, 0.80)
+            else
+                set(1.00, 0, 1.00, 1.00)
+            end
+        end
+        local x, z = 0, 0
+        
+        if current_mode == "Chaos" then
+            local chaos_t = t * 15 * speed_multiplier
+            x = distance * 0.8 * (math.sin(chaos_t * 1.3) * math.cos(chaos_t * 2.7) + math.sin(chaos_t * 4.1) * 0.3)
+            z = distance * 0.8 * (math.cos(chaos_t * 1.7) * math.sin(chaos_t * 3.2) + math.cos(chaos_t * 5.9) * 0.4)
+        elseif current_mode == "Burst" then
+            local burst_t = t * 12 * speed_multiplier
+            local burst_phase = math.floor(burst_t / (math.pi * 0.5)) % 8
+            local burst_scale = distance * 0.6
+            if burst_phase == 0 or burst_phase == 4 then
+                x = burst_scale * math.sin(burst_t * 3)
+                z = 0
+            elseif burst_phase == 1 or burst_phase == 5 then
+                x = 0
+                z = burst_scale * math.cos(burst_t * 3)
+            elseif burst_phase == 2 or burst_phase == 6 then
+                x = -burst_scale * math.sin(burst_t * 3)
+                z = 0
+            else
+                x = 0
+                z = -burst_scale * math.cos(burst_t * 3)
+            end
+        elseif current_mode == "Void" then
+            local void_t = t * 5 * speed_multiplier
+            local void_scale = distance * 0.7
+            x = void_scale * math.floor(math.sin(void_t * 2) * 3) / 3
+            z = void_scale * math.floor(math.cos(void_t * 2) * 3) / 3
+        elseif current_mode == "Adaptive" then
+            local adaptive_t = t * 8 * speed_multiplier
+            local adaptive_scale = distance * 0.5
+            x = adaptive_scale * (math.sin(adaptive_t) + math.sin(adaptive_t * 2.1) * 0.5)
+            z = adaptive_scale * (math.cos(adaptive_t * 1.3) + math.cos(adaptive_t * 3.7) * 0.3)
+        elseif current_mode == "Jitter" then
+            local jitter_t = t * 25 * speed_multiplier
+            local jitter_scale = distance * 0.3
+            x = jitter_scale * (math.sin(jitter_t) + (math.random() - 0.5) * 2)
+            z = jitter_scale * (math.cos(jitter_t) + (math.random() - 0.5) * 2)
+        elseif current_mode == "Micro" then
+            local micro_t = t * 40 * speed_multiplier
+            local micro_scale = distance * 0.15
+            x = micro_scale * math.tan(micro_t * 0.1) * 0.3
+            z = micro_scale * math.atan(micro_t * 0.1) * 0.3
+        elseif current_mode == "Retreat" then
+            local retreat_t = t * 3 * speed_multiplier
+            local retreat_scale = distance * 1.2
+            x = retreat_scale * math.log(math.abs(math.sin(retreat_t)) + 0.1) * math.sign(math.sin(retreat_t))
+            z = retreat_scale * math.log(math.abs(math.cos(retreat_t)) + 0.1) * math.sign(math.cos(retreat_t))
+        elseif current_mode == "Push" then
+            local push_t = t * 6 * speed_multiplier
+            local push_scale = distance * 0.2
+            local push_force = 3 + 2 * math.sin(push_t * 1.2)
+            x = push_scale * math.pow(math.sin(push_t * 2), 3) * push_force
+            z = push_scale * math.pow(math.cos(push_t * 2), 3) * push_force
+        elseif current_mode == "Counter" then
+            local counter_t = t * 10 * speed_multiplier
+            local counter_scale = distance * 0.6
+            x = counter_scale * math.sqrt(math.abs(math.sin(counter_t))) * math.sign(math.sin(counter_t))
+            z = counter_scale * math.sqrt(math.abs(math.cos(counter_t))) * math.sign(math.cos(counter_t))
+        elseif current_mode == "Stutter" then
+            local stutter_t = t * 35 * speed_multiplier
+            local stutter_scale = distance * 0.4
+            local stutter_step = math.floor(stutter_t / (math.pi * 0.1))
+            x = stutter_scale * (stutter_step % 3 == 0 and 1 or 0) * math.sin(stutter_step * 0.5)
+            z = stutter_scale * (stutter_step % 3 == 1 and 1 or 0) * math.cos(stutter_step * 0.5)
+        elseif current_mode == "Orbital" then
+            local orbital_t = t * 4 * speed_multiplier
+            local orbital_scale = distance * 0.9
+            x = orbital_scale * math.sin(orbital_t) * (1 + 0.3 * math.sin(orbital_t * 5))
+            z = orbital_scale * math.cos(orbital_t) * (1 + 0.3 * math.cos(orbital_t * 5))
+        elseif current_mode == "Escape" then
+            local escape_t = t * 9 * speed_multiplier
+            local escape_scale = distance * 0.8
+            x = escape_scale * math.exp(-math.abs(math.sin(escape_t))) * math.sign(math.sin(escape_t))
+            z = escape_scale * math.exp(-math.abs(math.cos(escape_t))) * math.sign(math.cos(escape_t))
+        elseif current_mode == "Quantum" then
+            local quantum_t = t * 14 * speed_multiplier
+            local quantum_scale = distance * 0.3
+            x = quantum_scale * math.sin(quantum_t * 2) * math.sin(quantum_t * 3) * math.sin(quantum_t * 5)
+            z = quantum_scale * math.cos(quantum_t * 2) * math.cos(quantum_t * 3) * math.cos(quantum_t * 5)
+        elseif current_mode == "AntiAim" then
+            local antiaim_t = t * 22 * speed_multiplier
+            local antiaim_scale = distance * 0.2
+            x = antiaim_scale * math.sin(antiaim_t) * (0.5 + math.random() * 1.5)
+            z = antiaim_scale * math.cos(antiaim_t) * (0.5 + math.random() * 1.5)
+        elseif current_mode == "Pringle" then
+            local pringle_t = t * 7 * speed_multiplier
+            local pringle_scale = distance * 0.6
+            x = pringle_scale * math.sin(pringle_t) * (1 + 0.5 * math.sin(pringle_t * 3.14159))
+            z = pringle_scale * math.cos(pringle_t) * (1 + 0.5 * math.cos(pringle_t * 3.14159))
+        elseif current_mode == "Random Spike" then
+            local spike_t = t * 50 * speed_multiplier
+            local spike_scale = distance * 0.5
+            if math.random() < 0.15 then
+                x = spike_scale * (math.random() - 0.5) * 4
+                z = spike_scale * (math.random() - 0.5) * 4
+            else
+                x = spike_scale * math.sin(spike_t) * 0.3
+                z = spike_scale * math.cos(spike_t) * 0.3
+            end
+        elseif current_mode == "Circle" then
+            local circle_t = t * 5 * speed_multiplier
+            local circle_scale = distance * 0.8
+            x = circle_scale * math.sin(circle_t)
+            z = circle_scale * math.cos(circle_t)
+        elseif current_mode == "Figure8" then
+            local figure8_t = t * 3 * speed_multiplier
+            local figure8_scale = distance * 0.7
+            x = figure8_scale * math.sin(figure8_t)
+            z = figure8_scale * math.sin(figure8_t * 2) * 0.5
+        elseif current_mode == "Gridshot" then
+            local grid_t = t * 18 * speed_multiplier
+            local grid_scale = distance * 0.3
+            local grid_phase = math.floor(grid_t / (math.pi * 0.5)) % 4
+            if grid_phase == 0 then
+                x = grid_scale * math.sin(grid_t * 2)
+                z = 0
+            elseif grid_phase == 1 then
+                x = 0
+                z = grid_scale * math.cos(grid_t * 2)
+            elseif grid_phase == 2 then
+                x = -grid_scale * math.sin(grid_t * 2)
+                z = 0
+            else
+                x = 0
+                z = -grid_scale * math.cos(grid_t * 2)
+            end
+        elseif current_mode == "Spiral" then
+            local spiral_t = t * 2 * speed_multiplier
+            local spiral_scale = distance * 0.9
+            local spiral_radius = spiral_scale * (spiral_t % (6 * math.pi)) / (6 * math.pi)
+            x = spiral_radius * math.cos(spiral_t)
+            z = spiral_radius * math.sin(spiral_t)
+        elseif current_mode == "SideDash" then
+            local dash_t = t * 20 * speed_multiplier
+            local dash_scale = distance * 0.4
+            local dash_phase = math.floor(dash_t / math.pi) % 2
+            if dash_phase == 0 then
+                x = dash_scale * math.sin(dash_t * 2)
+                z = dash_scale * 0.1
+            else
+                x = dash_scale * 0.1
+                z = dash_scale * math.cos(dash_t * 2)
+            end
+        elseif current_mode == "ZigZag" then
+            local zigzag_t = t * 30 * speed_multiplier
+            local zigzag_scale = distance * 0.5
+            x = zigzag_scale * math.sin(zigzag_t)
+            z = zigzag_scale * math.sin(zigzag_t * 3) * 0.3
+        elseif current_mode == "PulseInOut" then
+            local pulse_t = t * 8 * speed_multiplier
+            local pulse_scale = distance * 0.6
+            local pulse_radius = pulse_scale * (0.2 + 0.8 * math.sin(pulse_t * 1.8))
+            x = pulse_radius * math.sin(pulse_t)
+            z = pulse_radius * math.cos(pulse_t)
+        elseif current_mode == "Anchors" then
+            local anchor_t = t * 1.5 * speed_multiplier
+            local anchor_scale = distance * 0.5
+            x = anchor_scale * math.sin(anchor_t) * (1 + 0.6 * math.sin(anchor_t * 0.2))
+            z = anchor_scale * math.cos(anchor_t) * (1 + 0.6 * math.cos(anchor_t * 0.2))
+        elseif current_mode == "YoYo" then
+            local yoyo_t = t * 16 * speed_multiplier
+            local yoyo_scale = distance * 0.3
+            local yoyo_radius = yoyo_scale * (0.1 + 0.9 * math.abs(math.sin(yoyo_t * 2)))
+            x = yoyo_radius * math.sin(yoyo_t)
+            z = yoyo_radius * math.cos(yoyo_t)
+        elseif current_mode == "Pendulum" then
+            local pendulum_t = t * 6 * speed_multiplier
+            local pendulum_scale = distance * 0.8
+            x = pendulum_scale * math.sin(pendulum_t)
+            z = pendulum_scale * math.cos(pendulum_t) * 0.2
+        elseif current_mode == "Void Strafe" then
+            local void_strafe_t = t * 6 * speed_multiplier
+            local void_strafe_scale = distance * 0.6
+            x = void_strafe_scale * math.floor(math.sin(void_strafe_t * 2) * 2) / 2
+            z = void_strafe_scale * math.floor(math.cos(void_strafe_t * 2) * 2) / 2
+        elseif current_mode == "Adaptive Strafe" then
+            local adaptive_strafe_t = t * 11 * speed_multiplier
+            local adaptive_strafe_scale = distance * 0.5
+            x = adaptive_strafe_scale * (math.sin(adaptive_strafe_t) + 0.4 * math.sin(adaptive_strafe_t * 3.14159))
+            z = adaptive_strafe_scale * (math.cos(adaptive_strafe_t) + 0.4 * math.cos(adaptive_strafe_t * 3.14159))
+        else
+            local angle = (t * 10 * speed_multiplier) % (2 * math.pi)
+            x = math.cos(angle) * (distance * 0.6)
+            z = math.sin(angle) * (distance * 0.6)
+        end
+        
+        if randomness > 0 then
+            local random_factor = randomness / 2
+            local random_x = (math.random() - 0.5) * distance * 0.15 * random_factor
+            local random_z = (math.random() - 0.5) * distance * 0.15 * random_factor
+            x = x + random_x
+            z = z + random_z
+        end
+        
+        local pos = center + Vector3.new(x, height, z)
+        return CFrame.new(pos)
+    end
+    
+    local function wrapper()
+        local ok, res = xpcall(compute, function(e)
+            return nil
+        end)
+        if ok then return res end
+        return nil
+    end
+    getgenv().wanderkidd_current_strafe = wrapper
+    
+    local unsafe_mode = val(force_unsafe, false)
+    local want_local_loop = unsafe_mode or not (api and api.ragebot_strafe_override)
+    if api and api.ragebot_strafe_override and not unsafe_mode then
+        api:ragebot_strafe_override(wrapper, unsafe_mode)
+        if getgenv().wanderkidd_strafe_loop then
+            pcall(function() getgenv().wanderkidd_strafe_loop:Disconnect() end)
+            getgenv().wanderkidd_strafe_loop = nil
+        end
+    else
+        if not getgenv().wanderkidd_strafe_loop then
+            getgenv().wanderkidd_strafe_loop = RunService.Heartbeat:Connect(function()
+                local fn = getgenv().wanderkidd_current_strafe
+                if type(fn) == "function" then
+                    local cf = fn()
+                    if cf and val(enable, false) and not val(better_void_toggle, false) then
+                        pcall(function()
+                            set_desync_cframe(cf)
+                        end)
+                    end
+                end
+            end)
+        end
+    end
+end
+
+pcall(register)
+
+-- Hit Sound System
+local function createHitSound()
+    local sound = Instance.new("Sound")
+    sound.Parent = game.Players.LocalPlayer.Character.HumanoidRootPart
+    local sound_id = val(input_sound_id, "8394333801")
+    local volume = val(slider_volume, 50) / 100
+    local speed = val(slider_sound_speed, 1.0)
+    
+    sound.SoundId = "rbxassetid://" .. sound_id
+    sound.Volume = volume
+    sound.PlaybackSpeed = speed
+
+    sound:Play()
+
+    sound.Ended:Connect(function()
+        sound:Destroy()
+    end)
+end
+
+local lastHealth = nil
+local lastTarget = nil
+
+game:GetService("RunService").Heartbeat:Connect(function(dt)
+    if val(toggle_custom_hit_sound, true) then
+        local target_cache = call_api("get_target_cache", "ragebot")
+        
+        if target_cache and target_cache.player and target_cache.player.Character and target_cache.player.Character:FindFirstChild("Humanoid") then
+            local humanoid = target_cache.player.Character:FindFirstChild("Humanoid")
+            
+            if humanoid then
+                local currentHealth = math.round(humanoid.Health)
+                
+                if lastHealth == nil or target_cache.player ~= lastTarget then
+                    lastHealth = currentHealth
+                end
+
+                if currentHealth < lastHealth then
+                    createHitSound()
+                end
+
+                lastHealth = currentHealth
+                lastTarget = target_cache.player
+            end
+        end
+    end
+end)
